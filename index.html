@@ -3,430 +3,433 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexus — Agenda Board v2</title>
+  <title>Nexus — Project Board</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root{
-      --bg:#f5f7fb; --panel:#ffffff; --panel2:#fbfcff; --line:#dfe7f2; --text:#152033; --muted:#63708a;
-      --accent:#2f80ed; --accent2:#14b8a6; --good:#15803d; --warn:#b45309; --bad:#dc2626; --shadow:0 18px 50px rgba(32,48,77,.08);
-      --radius:24px;
+    :root {
+      --bg:#f6f8fc; --panel:#ffffff; --line:#d9e2ef; --text:#142033; --muted:#65748b;
+      --accent:#2f80ed; --accent2:#14b8a6; --good:#16803d; --hold:#9a6b2f; --blocked:#c2410c; --review:#6d28d9;
+      --shadow:0 18px 40px rgba(35,52,82,.08); --radius:22px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--text);background:
-      radial-gradient(circle at 10% 0%, rgba(47,128,237,.12), transparent 28%),
-      radial-gradient(circle at 90% 10%, rgba(20,184,166,.10), transparent 26%),
-      linear-gradient(180deg,#eef4ff 0%, #f7f9fd 38%, #eef3f9 100%);}
-    .grain{pointer-events:none;position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");opacity:.55}
-    .wrap{max-width:1440px;margin:0 auto;padding:24px}
-    .shell{display:grid;grid-template-columns:1.4fr .8fr;gap:20px;align-items:start}
-    .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
-    .hero{padding:26px;position:relative;overflow:hidden}
-    .hero::after{content:'';position:absolute;right:-40px;top:-40px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle, rgba(47,128,237,.16), transparent 65%)}
+      radial-gradient(circle at top left, rgba(47,128,237,.11), transparent 28%),
+      radial-gradient(circle at top right, rgba(20,184,166,.10), transparent 26%),
+      linear-gradient(180deg,#edf4ff 0%, #f8fbff 30%, #eef3f9 100%);} 
+    .wrap{max-width:1520px;margin:0 auto;padding:20px}
+    .card{background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .hero{padding:24px;position:relative;overflow:hidden}
+    .hero::after{content:'';position:absolute;right:-50px;top:-50px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle, rgba(47,128,237,.16), transparent 65%)}
     .eyebrow{font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
-    h1{font-family:'Fraunces',serif;font-size:clamp(40px,5vw,74px);line-height:.92;margin:0 0 14px 0}
-    .lead{color:var(--muted);max-width:860px;line-height:1.7;font-size:15px}
-    .agenda{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-    .agenda-item{padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:#fff}
-    .agenda-item b{display:block;margin-bottom:4px;font-size:14px}
+    h1{font-family:'Fraunces',serif;font-size:clamp(36px,4vw,68px);line-height:.95;margin:0 0 12px 0}
+    .lead{max-width:980px;color:var(--muted);line-height:1.7;font-size:15px}
+    .topgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+    .stat{padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:#fff;position:relative}
+    .stat::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--accent),var(--accent2))}
+    .stat .k{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+    .stat .v{margin-top:8px;font-size:30px;font-family:'Fraunces',serif}
+    .stat .d{margin-top:6px;color:var(--muted);font-size:13px}
+    .agenda{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+    .agenda-item{padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:#fff}
+    .agenda-item b{display:block;margin-bottom:4px}
     .agenda-item span{color:var(--muted);font-size:13px;line-height:1.5}
-    .topbar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}
-    .role-badge{padding:10px 14px;border-radius:999px;background:#e8f2ff;color:#1f4f9d;font-weight:700;font-size:13px;border:1px solid #cfe0ff}
-    .user-badge{color:var(--muted);font-size:13px}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
-    .stat{padding:16px;border-radius:18px;border:1px solid var(--line);background:#fff;position:relative;overflow:hidden}
-    .stat::before{content:'';position:absolute;left:0;top:0;height:100%;width:4px;background:linear-gradient(180deg,var(--accent),var(--accent2))}
-    .stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em}
-    .stat .v{font-family:'Fraunces',serif;font-size:32px;line-height:1;margin-top:8px}
-    .stat .d{font-size:13px;color:var(--muted);margin-top:8px}
-    .section{padding:20px}
-    .section-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}
-    .section-title{font-size:18px;font-weight:800}
-    .section-note{font-size:13px;color:var(--muted)}
-    .tabs{display:flex;gap:8px;flex-wrap:wrap}
-    .tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 14px;font-weight:700;color:var(--muted);cursor:pointer}
-    .tab.active{background:#eaf2ff;color:#1f4f9d;border-color:#cfe0ff}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-bottom:16px}
-    .searchbox{display:flex;gap:10px;flex:1;min-width:280px}
+    .layout{display:grid;grid-template-columns:1.35fr .85fr;gap:18px;margin-top:18px}
+    .board{padding:18px}
+    .board-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+    .title{font-size:18px;font-weight:800}
+    .note{font-size:13px;color:var(--muted)}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 16px}
+    .search{display:flex;gap:10px;flex:1;min-width:280px}
     input,select,textarea{width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--text);font:inherit;outline:none}
-    textarea{min-height:92px;resize:vertical}
-    input::placeholder,textarea::placeholder{color:#8a97ad}
-    .btn{border:0;border-radius:14px;padding:12px 16px;cursor:pointer;font-weight:800;background:linear-gradient(135deg,var(--accent),#5db0ff);color:#fff;box-shadow:0 10px 28px rgba(47,128,237,.18)}
+    textarea{min-height:88px;resize:vertical}
+    .btn{border:0;border-radius:14px;padding:12px 16px;cursor:pointer;font-weight:800;background:linear-gradient(135deg,var(--accent),#5daeff);color:#fff;box-shadow:0 10px 24px rgba(47,128,237,.16)}
     .btn.secondary{background:#fff;color:var(--text);border:1px solid var(--line);box-shadow:none}
-    .btn.danger{background:linear-gradient(135deg,#ef4444,#fb7185)}
-    .layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
-    .tasklist{display:grid;gap:12px}
-    .task{padding:16px;border-radius:20px;border:1px solid var(--line);background:#fff}
-    .task-top{display:flex;justify-content:space-between;gap:12px;align-items:start}
-    .task-title{font-weight:800;font-size:16px;line-height:1.25}
-    .task-desc{color:var(--muted);font-size:13px;line-height:1.6;margin-top:6px}
-    .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#f5f8fc;border:1px solid var(--line);font-size:12px;color:#516077}
-    .pill.high{background:#fff7e8;color:#8d5f00;border-color:#ffe1aa}
-    .pill.medium{background:#eef4ff;color:#2458a8;border-color:#d8e6ff}
-    .pill.low{background:#eefbf6;color:#0f7a53;border-color:#d4f4e7}
-    .pill.done{background:#edfdf2;color:#15703a;border-color:#cdeed8}
-    .pill.blocked{background:#fff1f1;color:#b42318;border-color:#ffd7d7}
-    .subtasks{display:grid;gap:8px;margin-top:12px}
-    .subtask,.note-item{padding:10px 12px;border-radius:14px;background:#f8fbff;border:1px solid #e2eaf5;font-size:13px;display:flex;justify-content:space-between;gap:8px;align-items:center}
-    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-    .editor{padding:20px;position:sticky;top:18px}
+    .columns{display:grid;grid-template-columns:repeat(6,minmax(210px,1fr));gap:12px;overflow:auto;padding-bottom:4px}
+    .col{background:#f9fbff;border:1px solid var(--line);border-radius:20px;min-height:540px;display:flex;flex-direction:column}
+    .col-head{padding:14px 14px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+    .col-head strong{font-size:14px}
+    .count{font-size:12px;color:var(--muted)}
+    .dropzone{padding:10px;display:grid;gap:10px;min-height:100%;flex:1}
+    .card-task{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 10px 24px rgba(31,48,77,.05);cursor:grab}
+    .card-task:active{cursor:grabbing}
+    .task-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+    .task-title{font-weight:800;font-size:15px;line-height:1.2}
+    .task-desc{color:var(--muted);font-size:13px;line-height:1.55;margin-top:6px}
+    .badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+    .pill{font-size:11px;padding:6px 9px;border-radius:999px;background:#f4f7fb;border:1px solid var(--line);color:#516077}
+    .pill.high{background:#fff4e1;border-color:#ffdca6;color:#8d5f00}
+    .pill.medium{background:#eef4ff;border-color:#d9e6ff;color:#2458a8}
+    .pill.low{background:#eefbf6;border-color:#d4f4e7;color:#0f7a53}
+    .pill.todo{background:#f4f7fb}
+    .pill.working_on_it{background:#eaf2ff;color:#2458a8}
+    .pill.on_hold{background:#fff7ea;color:#946000}
+    .pill.blocked{background:#fff0eb;color:#b64012}
+    .pill.needs_review{background:#f1eaff;color:#6d28d9}
+    .pill.finished{background:#ebf9ef;color:#16803d}
+    .pill.date{background:#f8fbff}
+    .task-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .editor{padding:18px;position:sticky;top:18px}
     .editor h3{margin:0 0 10px 0;font-size:18px}
-    .save-note{color:var(--muted);font-size:12px;margin-bottom:10px}
+    .save-note{color:var(--muted);font-size:12px;margin-bottom:10px;line-height:1.5}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .login{position:fixed;inset:0;background:rgba(241,245,255,.78);backdrop-filter:blur(18px);display:grid;place-items:center;z-index:50}
-    .login-card{width:min(620px, calc(100vw - 28px));padding:24px}
-    .login-card h2{font-family:'Fraunces',serif;font-size:40px;margin:0 0 8px 0}
-    .login-card p{margin:0 0 16px 0;color:var(--muted);line-height:1.6}
+    .login{position:fixed;inset:0;display:grid;place-items:center;background:rgba(239,245,255,.82);backdrop-filter:blur(18px);z-index:50}
+    .login-card{width:min(540px,calc(100vw - 24px));padding:24px}
+    .login-card h2{font-family:'Fraunces',serif;font-size:40px;margin:0 0 8px}
+    .login-card p{margin:0 0 16px;color:var(--muted);line-height:1.6}
     .login-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-    .error{min-height:18px;color:#b42318;font-size:13px;margin-top:6px}
+    .error{color:#b42318;font-size:13px;min-height:18px;margin-top:8px}
     .hidden{display:none !important}
-    @media (max-width:1100px){.shell,.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.agenda{grid-template-columns:1fr}.editor{position:static}}
-    @media (max-width:640px){.wrap{padding:14px}.toolbar,.topbar{flex-direction:column;align-items:stretch}.searchbox,.grid2{grid-template-columns:1fr;flex-direction:column}.stats{grid-template-columns:1fr}}
+    .small{font-size:12px;color:var(--muted)}
+    @media (max-width:1200px){.layout{grid-template-columns:1fr}.columns{grid-template-columns:repeat(2,minmax(220px,1fr))}.topgrid,.agenda{grid-template-columns:1fr 1fr}}
+    @media (max-width:760px){.wrap{padding:14px}.topgrid,.agenda,.grid2,.columns{grid-template-columns:1fr}.toolbar{flex-direction:column}.search{flex-direction:column;min-width:0}}
   </style>
 </head>
 <body>
-  <div class="grain"></div>
-
-  <div style="max-width:1440px;margin:16px auto 0;padding:0 24px;">
-    <div style="padding:14px 16px;border-radius:16px;background:#eaf2ff;border:1px solid #cfe0ff;color:#1f4f9d;font-weight:700;box-shadow:0 10px 24px rgba(47,128,237,.10);">Nexus is loading — if you see this bar, the page is alive and the board will appear below.</div>
-  </div>
-
   <div class="login hidden" id="loginOverlay">
     <div class="login-card card">
-      <div class="eyebrow">Private shared task board</div>
+      <div class="eyebrow">Private workspace</div>
       <h2>Nexus</h2>
-      <p>Sign in to access the team backlog, senior summary, agenda, and shared notes. This version uses Supabase for real login and shared data.</p>
-      <div class="grid2">
-        <input id="emailInput" type="email" placeholder="Email" />
-        <input id="passwordInput" type="password" placeholder="Password" />
-      </div>
-      <div class="login-actions">
-        <button class="btn" id="loginBtn">Sign in</button>
-        <button class="btn secondary" id="signupBtn">Create account</button>
-        <button class="btn secondary" id="demoBtn">Demo local mode</button>
-      </div>
-      <div class="error" id="loginError"></div>
+      <p>Login is turned off for now. The board opens directly so you can work. Shared login can be added back when you want it.</p>
+      <div class="small">This is a clean local-first board with drag-and-drop task states and due dates.</div>
     </div>
   </div>
 
-  <div class="wrap hidden" id="app">
-    <div class="topbar">
-      <div class="eyebrow">Nexus • v2 agenda-first redesign</div>
-      <div class="role-badge" id="roleBadge">Role: editor</div>
-      <div class="user-badge" id="userBadge">Signed out</div>
-    </div>
-
+  <div class="wrap">
     <section class="hero card">
-      <div class="eyebrow">Today’s agenda</div>
-      <h1>Simple, brighter task management for the whole team.</h1><div class="save-note" style="margin-top:12px;color:#2f80ed;font-weight:700;">Agenda-first layout • shared Supabase data • cleaner senior view</div>
-      <div class="lead">
-        Focus on what matters today: clear priorities, visible blockers, and easy updates. The same board works for seniors and the working team, but the view is cleaner and easier to scan.
-      </div>
+      <div class="eyebrow">Nexus</div>
+      <h1>Clearer task tracking with agenda, states, due dates, and drag-and-drop.</h1>
+      <div class="lead">Use this board to see what’s happening today, what’s on hold, what’s being worked on, and what still needs attention. Drag tasks with the mouse into the right column, update due dates, and keep both the detailed team view and senior overview in sync.</div>
       <div class="agenda">
-        <div class="agenda-item"><b>1. Review the senior view</b><span>See what’s done, what’s blocked, and what needs attention today.</span></div>
-        <div class="agenda-item"><b>2. Update the backlog</b><span>Add tasks, notes, blockers, and subtasks without hunting through the app.</span></div>
-        <div class="agenda-item"><b>3. Keep everyone in sync</b><span>Shared login + shared database so multiple people see the same board.</span></div>
+        <div class="agenda-item"><b>Today’s agenda</b><span>Focus on the highest priority active tasks and anything blocked or due soon.</span></div>
+        <div class="agenda-item"><b>Weekly view</b><span>See what should be finished this week, what is on hold, and what’s moving next.</span></div>
+        <div class="agenda-item"><b>Senior view</b><span>A compact overview of progress, blockers, and the next things that matter.</span></div>
       </div>
-      <div class="stats">
-        <div class="stat"><div class="k">Project phase</div><div class="v" id="phaseStat">Build</div><div class="d">Current operating phase</div></div>
-        <div class="stat"><div class="k">Backlog</div><div class="v" id="backlogCount">0</div><div class="d">Tasks tracked</div></div>
-        <div class="stat"><div class="k">Blockers</div><div class="v" id="blockedCount">0</div><div class="d">Need attention</div></div>
-        <div class="stat"><div class="k">Velocity</div><div class="v" id="velocityStat">0%</div><div class="d">Finished tasks</div></div>
+      <div class="topgrid">
+        <div class="stat"><div class="k">Open</div><div class="v" id="openStat">0</div><div class="d">Tasks not finished yet</div></div>
+        <div class="stat"><div class="k">Working</div><div class="v" id="workingStat">0</div><div class="d">Currently being worked on</div></div>
+        <div class="stat"><div class="k">Blocked</div><div class="v" id="blockedStat">0</div><div class="d">Need attention</div></div>
+        <div class="stat"><div class="k">Finished</div><div class="v" id="finishedStat">0</div><div class="d">Done and out of the way</div></div>
       </div>
     </section>
 
-    <section class="section card" style="margin-top:18px;">
-      <div class="section-head">
-        <div>
-          <div class="section-title">Task board</div><div class="section-note">This build is visibly different: agenda-first layout, brighter cards, and a clearer structure.</div>
-          <div class="section-note">Senior summary, backlog and detail editing in one place.</div>
+    <section class="layout">
+      <div class="card board">
+        <div class="board-head">
+          <div>
+            <div class="title">Task board</div>
+            <div class="note">Drag cards between columns. Click edit to update due date, notes, blockers, and status.</div>
+          </div>
+          <div class="toolbar" style="margin:0;flex:1;justify-content:flex-end;">
+            <div class="search">
+              <input id="searchInput" placeholder="Search tasks, notes, blockers, owner…" />
+              <select id="statusFilter">
+                <option value="all">All states</option>
+                <option value="backlog">Backlog</option>
+                <option value="on_hold">On hold</option>
+                <option value="working_on_it">Working</option>
+                <option value="blocked">Blocked</option>
+                <option value="needs_review">Needs review</option>
+                <option value="finished">Finished</option>
+              </select>
+            </div>
+            <button class="btn secondary" id="exportBtn">Export</button>
+            <button class="btn secondary" id="resetBtn">Reset</button>
+          </div>
         </div>
-        <div class="tabs">
-          <button class="tab active" data-view="senior">Senior</button>
-          <button class="tab" data-view="backlog">Backlog</button>
-          <button class="tab" data-view="all">All</button>
-        </div>
+
+        <div class="columns" id="columns"></div>
       </div>
 
-      <div class="toolbar">
-        <div class="searchbox">
-          <input id="searchInput" placeholder="Search tasks, owners, blockers, notes…" />
-          <select id="statusFilter">
-            <option value="all">All statuses</option>
-            <option value="todo">Todo</option>
-            <option value="in_progress">In progress</option>
-            <option value="blocked">Blocked</option>
-            <option value="done">Done</option>
-          </select>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn secondary" id="exportBtn">Export JSON</button>
-          <button class="btn secondary" id="refreshBtn">Refresh</button>
-          <button class="btn secondary" id="logoutBtn">Logout</button>
-        </div>
-      </div>
-
-      <div class="layout">
-        <div>
-          <div class="tasklist" id="taskList"></div>
-        </div>
-
-        <aside class="editor card">
-          <h3 id="formTitle">Add / update task</h3>
-          <div class="save-note">Changes are saved to Supabase. If the database is unavailable, the board falls back to local storage.</div>
-          <form id="taskForm">
-            <input type="hidden" name="taskId" />
-            <input name="title" placeholder="Task title" required />
-            <div class="grid2">
-              <select name="priority"><option value="high">High priority</option><option value="medium">Medium priority</option><option value="low">Low priority</option></select>
-              <select name="status"><option value="todo">Todo</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select>
-            </div>
-            <div class="grid2">
-              <input name="owner" placeholder="Owner / team" value="us" />
-              <input name="area" placeholder="Area (campaign / company / prospect)" />
-            </div>
-            <textarea name="summary" placeholder="Short summary"></textarea>
-            <textarea name="details" placeholder="Details"></textarea>
-            <textarea name="notes" placeholder="Project notes / blockers / context"></textarea>
+      <aside class="card editor">
+        <h3 id="editorTitle">Add or update task</h3>
+        <div class="save-note">This version is local-first so it works immediately. Later we can reconnect shared database sync.</div>
+        <form id="taskForm">
+          <input type="hidden" name="taskId" />
+          <input name="title" placeholder="Task title" required />
+          <div class="grid2">
+            <select name="status">
+              <option value="backlog">Backlog</option>
+              <option value="on_hold">On hold</option>
+              <option value="working_on_it">Working on it</option>
+              <option value="blocked">Blocked</option>
+              <option value="needs_review">Needs review</option>
+              <option value="finished">Finished</option>
+            </select>
+            <select name="priority">
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="grid2">
+            <input name="owner" placeholder="Owner / team" value="us" />
+            <input name="area" placeholder="Area (campaign / company / prospect / ops)" />
+          </div>
+          <div class="grid2">
+            <input name="due_date" type="date" />
+            <input name="agenda_day" placeholder="Agenda day (today / this week / next week)" />
+          </div>
+          <textarea name="summary" placeholder="Short summary"></textarea>
+          <textarea name="details" placeholder="Details"></textarea>
+          <textarea name="notes" placeholder="Notes / blockers / context"></textarea>
+          <div class="grid2">
             <input name="subtasks" placeholder="Subtasks separated by |" />
             <input name="blockers" placeholder="Blockers separated by |" />
-            <input name="dependencies" placeholder="Dependencies separated by |" />
-            <div class="actions">
-              <button class="btn" type="submit">Save task</button>
-              <button class="btn secondary" type="button" id="clearFormBtn">Clear form</button>
-            </div>
-          </form>
-        </aside>
-      </div>
+          </div>
+          <input name="dependencies" placeholder="Dependencies separated by |" />
+          <div class="task-actions">
+            <button class="btn" type="submit">Save task</button>
+            <button class="btn secondary" type="button" id="clearBtn">Clear</button>
+          </div>
+        </form>
+      </aside>
     </section>
   </div>
 
-  <script>
-    const SUPABASE_URL='https://nakxlxouxfyycdydrack.supabase.co';
-    const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ha3hseG91eGZ5eWNkeWRyYWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzI1NzIsImV4cCI6MjA5MDAwODU3Mn0.NyiWAA2ABdqc6EBXFO46utD4x356rcYMFyT9y5tAApc';
-    const LOCAL_KEY='project_atlas_local_v3';
-    const DEMO_PASSWORD='atlas';
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  <template id="taskTemplate">
+    <article class="card-task" draggable="true">
+      <div class="task-top">
+        <div>
+          <div class="task-title"></div>
+          <div class="task-desc"></div>
+        </div>
+      </div>
+      <div class="badges"></div>
+      <div class="task-desc notes"></div>
+      <div class="task-actions">
+        <button class="btn secondary edit-btn" type="button">Edit</button>
+        <button class="btn secondary delete-btn" type="button">Delete</button>
+      </div>
+    </article>
+  </template>
 
-    const seedTasks=[
-      {id:'TASK-001',title:'Confirm Salesforce Campaign field API names',area:'campaign',priority:'high',status:'done',owner:'us',summary:'Validate the Campaign fields before wiring production queries.',details:'Use FieldDefinition to confirm exact API names for Campaign_Brief__c and related targeting fields.',notes:'Finished this already; keep as the canonical field checklist.',subtasks:['Run FieldDefinition query','Confirm target fields','Update workflow queries'],blockers:[],dependencies:[],updated_at:new Date().toISOString()},
-      {id:'TASK-002',title:'Build campaign worker',area:'campaign',priority:'high',status:'in_progress',owner:'us',summary:'Read Salesforce Campaign and build the campaign rule pack.',details:'Campaign Brief is the main source of truth. Structured fields become targeting and exclusion rules.',notes:'Need a clean version senior leadership can read in one glance.',subtasks:['Fetch campaign','Parse brief','Normalize targeting fields'],blockers:[],dependencies:['TASK-001'],updated_at:new Date().toISOString()},
-      {id:'TASK-003',title:'Build company worker',area:'company',priority:'high',status:'in_progress',owner:'us',summary:'Resolve account, classify fit, and detect parent/child/manual review.',details:'Parent resolution priority: LinkedIn -> Website -> Name. No auto merge.',notes:'Manual review should be visible and easy to understand.',subtasks:['Account read','Parent lookup','Manual review routing'],blockers:[],dependencies:['TASK-002'],updated_at:new Date().toISOString()},
-      {id:'TASK-004',title:'Build prospect worker',area:'prospect',priority:'medium',status:'todo',owner:'us',summary:'Reuse existing contacts and find missing decision-makers.',details:'Only runs when company is campaign eligible and prospecting allowed.',notes:'This should feel lightweight, not cluttered.',subtasks:['Existing contact check','Gap detection','New prospect discovery'],blockers:[],dependencies:['TASK-003'],updated_at:new Date().toISOString()},
-      {id:'TASK-005',title:'Build result handler',area:'ops',priority:'medium',status:'todo',owner:'us',summary:'Write results back to Salesforce and keep outputs clean.',details:'Update Account, create Contacts, and preserve a clear audit trail.',notes:'Need history so people can see what changed and why.',subtasks:['Company result handling','Prospect result handling','Audit logging'],blockers:[],dependencies:['TASK-003','TASK-004'],updated_at:new Date().toISOString()},
-      {id:'TASK-006',title:'Create senior dashboard view',area:'web',priority:'medium',status:'todo',owner:'us',summary:'A clean top-level view for management.',details:'Show progress, blockers, backlog, and what matters next.',notes:'This is the management-ready overview.',subtasks:['Summary cards','Blocker view','Milestone view'],blockers:[],dependencies:[],updated_at:new Date().toISOString()}
+  <script>
+    const STORAGE_KEY = 'nexus_tasks_v1';
+    const VIEW_KEY = 'nexus_view_v1';
+    const seedTasks = [
+      { id:'TASK-001', title:'Campaign worker', status:'working_on_it', priority:'high', owner:'us', area:'campaign', due_date:'', agenda_day:'today', summary:'Read Salesforce Campaign and build the campaign rule pack.', details:'Campaign Brief is the main source of truth. Structured fields become targeting and exclusion rules.', notes:'Need a clean version senior leadership can read in one glance.', subtasks:['Fetch campaign','Parse brief','Normalize targeting fields'], blockers:[], dependencies:[] },
+      { id:'TASK-002', title:'Company worker', status:'working_on_it', priority:'high', owner:'us', area:'company', due_date:'', agenda_day:'today', summary:'Resolve account, classify fit, and detect parent/child/manual review.', details:'Parent resolution priority: LinkedIn -> Website -> Name. No auto merge.', notes:'Manual review should be visible and easy to understand.', subtasks:['Account read','Parent lookup','Manual review routing'], blockers:[], dependencies:['TASK-001'] },
+      { id:'TASK-003', title:'Prospect worker', status:'backlog', priority:'medium', owner:'us', area:'prospect', due_date:'', agenda_day:'this week', summary:'Reuse existing contacts and find missing decision-makers.', details:'Only runs when company is campaign eligible and prospecting allowed.', notes:'This should feel lightweight, not cluttered.', subtasks:['Existing contact check','Gap detection','New prospect discovery'], blockers:[], dependencies:['TASK-002'] },
+      { id:'TASK-004', title:'Result handler', status:'backlog', priority:'medium', owner:'us', area:'ops', due_date:'', agenda_day:'this week', summary:'Write results back and keep outputs clean.', details:'Store history, notes, and clear statuses.', notes:'Need history so people can see what changed and why.', subtasks:['Writeback','Status history','Notes'], blockers:[], dependencies:['TASK-002','TASK-003'] },
+      { id:'TASK-005', title:'Senior overview', status:'needs_review', priority:'medium', owner:'us', area:'web', due_date:'', agenda_day:'next week', summary:'A clean top-level view for management.', details:'Show progress, blockers, backlog, and what matters next.', notes:'This needs to be easy to scan in 10 seconds.', subtasks:['Summary cards','Blocker view','Agenda strip'], blockers:[], dependencies:[] },
+      { id:'TASK-006', title:'Calendar / due date system', status:'backlog', priority:'high', owner:'us', area:'web', due_date:'', agenda_day:'today', summary:'Track when tasks should be done and what is due soon.', details:'Add due dates and make them visible in the board and summary.', notes:'This is key for staying organized.', subtasks:['Due date field','Due soon filter','Overdue highlight'], blockers:[], dependencies:[] }
     ];
 
-    const $=s=>document.querySelector(s);
-    const loginOverlay=$('#loginOverlay'), app=$('#app'), loginError=$('#loginError');
-    const taskList=$('#taskList'), taskForm=$('#taskForm'), searchInput=$('#searchInput'), statusFilter=$('#statusFilter');
-    const tabs=[...document.querySelectorAll('.tab')];
-    const roleBadge=$('#roleBadge'), userBadge=$('#userBadge');
-    let tasks=[];
-    let currentView='senior';
-    let currentUser={ email: 'local mode', app_role: 'admin' };
-    let projectId=null;
-    let fallbackMode=false;
+    const state = {
+      tasks: loadTasks(),
+      filter: localStorage.getItem(VIEW_KEY) || 'all',
+      search: ''
+    };
 
-    function esc(s){return String(s||'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]))}
-    function splitList(v){return String(v||'').split('|').map(s=>s.trim()).filter(Boolean)}
-    function saveLocal(){ localStorage.setItem(LOCAL_KEY, JSON.stringify(tasks)); }
-    function loadLocal(){ const v=localStorage.getItem(LOCAL_KEY); return v ? JSON.parse(v) : seedTasks.slice(); }
-    function setUserUI(){
-      const email = currentUser?.email || 'Signed out';
-      const role = currentUser?.app_role || 'editor';
-      userBadge.textContent = email;
-      roleBadge.textContent = `Role: ${role}`;
-    }
-    function clearForm(){ taskForm.reset(); taskForm.owner.value='us'; taskForm.taskId.value=''; $('#formTitle').textContent='Add / update task'; }
-    function fillForm(task){
-      taskForm.taskId.value=task.id;
-      taskForm.title.value=task.title||'';
-      taskForm.priority.value=task.priority||'medium';
-      taskForm.status.value=task.status||'todo';
-      taskForm.owner.value=task.owner||'us';
-      taskForm.area.value=task.area||'';
-      taskForm.summary.value=task.summary||'';
-      taskForm.details.value=task.details||'';
-      taskForm.notes.value=task.notes||'';
-      taskForm.subtasks.value=(task.subtasks||[]).join(' | ');
-      taskForm.blockers.value=(task.blockers||[]).join(' | ');
-      taskForm.dependencies.value=(task.dependencies||[]).join(' | ');
-      $('#formTitle').textContent='Edit task '+task.id;
-    }
+    const statuses = ['backlog','on_hold','working_on_it','blocked','needs_review','finished'];
+    const statusLabels = { backlog:'Backlog', on_hold:'On hold', working_on_it:'Working', blocked:'Blocked', needs_review:'Review', finished:'Finished' };
+    const statusColors = { backlog:'', on_hold:'on_hold', working_on_it:'working_on_it', blocked:'blocked', needs_review:'needs_review', finished:'finished' };
 
-    async function loadTasks(){
-      fallbackMode = true;
-      tasks = loadLocal();
-      return;
-      saveLocal();
+    const el = id => document.getElementById(id);
+    const taskForm = el('taskForm');
+    const taskTemplate = el('taskTemplate');
+    const columnsEl = el('columns');
+    const searchInput = el('searchInput');
+    const statusFilter = el('statusFilter');
+
+    function loadTasks(){
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const tasks = raw ? JSON.parse(raw) : seedTasks.slice();
+        return tasks.map(t => ({ ...t, due_date: t.due_date || '', agenda_day: t.agenda_day || 'this week' }));
+      } catch {
+        return seedTasks.slice();
+      }
+    }
+    function saveTasks(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks)); }
+    function esc(s){ return String(s ?? '').replace(/[&<>"]|'/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    function splitList(v){ return String(v || '').split('|').map(s => s.trim()).filter(Boolean); }
+
+    function dueState(task){
+      if(!task.due_date) return 'none';
+      const due = new Date(task.due_date + 'T00:00:00');
+      const today = new Date(); today.setHours(0,0,0,0);
+      const diff = Math.round((due - today)/(1000*60*60*24));
+      if(diff < 0) return 'overdue';
+      if(diff <= 2) return 'soon';
+      return 'later';
     }
 
-    function updateStats(){
-      const open=tasks.filter(t=>t.status!=='done').length;
-      const blocked=tasks.filter(t=>t.status==='blocked').length;
-      const done=tasks.filter(t=>t.status==='done').length;
-      const total=tasks.length || 1;
-      $('#statOpen').textContent=open;
-      $('#statBlocked').textContent=blocked;
-      $('#statDone').textContent=done;
-      $('#backlogCount').textContent=tasks.length;
-      $('#blockedCount').textContent=blocked;
-      $('#velocityStat').textContent=Math.round((done/total)*100)+'%';
-      $('#phaseStat').textContent=open>0?'Build':'Stabilize';
+    function getFilteredTasks(){
+      const q = state.search.toLowerCase().trim();
+      return state.tasks.filter(t => {
+        const matchFilter = state.filter === 'all' || t.status === state.filter;
+        const hay = [t.title,t.summary,t.details,t.notes,t.owner,t.area,t.agenda_day,t.due_date,...(t.subtasks||[]),...(t.blockers||[]),...(t.dependencies||[])].join(' ').toLowerCase();
+        return matchFilter && (!q || hay.includes(q));
+      });
+    }
+
+    function stats(){
+      const tasks = state.tasks;
+      const open = tasks.filter(t => t.status !== 'finished').length;
+      const working = tasks.filter(t => t.status === 'working_on_it').length;
+      const blocked = tasks.filter(t => t.status === 'blocked').length;
+      const finished = tasks.filter(t => t.status === 'finished').length;
+      const dueSoon = tasks.filter(t => dueState(t) === 'soon' || dueState(t) === 'overdue').length;
+      const next7 = tasks.filter(t => t.due_date && Math.abs(Math.round((new Date(t.due_date+'T00:00:00') - new Date())/(1000*60*60*24))) <= 7).length;
+      el('openStat').textContent = open;
+      el('workingStat').textContent = working;
+      el('blockedStat').textContent = blocked;
+      el('finishedStat').textContent = finished;
+      el('openStat').parentElement.querySelector('.d').textContent = `${dueSoon} due soon / overdue`;
+      el('workingStat').parentElement.querySelector('.d').textContent = `${next7} due in the next week`;
+    }
+
+    function agendaText(){
+      const today = state.tasks.filter(t => (t.agenda_day || '').toLowerCase().includes('today') || t.status === 'working_on_it' || t.status === 'blocked');
+      const week = state.tasks.filter(t => (t.agenda_day || '').toLowerCase().includes('week') || dueState(t) === 'soon');
+      const dueSoon = state.tasks.filter(t => dueState(t) === 'soon' || dueState(t) === 'overdue');
+      return { today, week, dueSoon };
     }
 
     function render(){
-      const q=searchInput.value.toLowerCase().trim();
-      const st=statusFilter.value;
-      let visible=tasks.filter(t=>{
-        const viewOk = currentView==='all' || (currentView==='senior' ? ['high','blocked'].includes(t.priority) || t.status!=='todo' : true);
-        const statusOk = st==='all' || t.status===st;
-        const hay=[t.title,t.summary,t.details,t.owner,t.area,t.notes,...(t.blockers||[]),...(t.dependencies||[]),...(t.subtasks||[])].join(' ').toLowerCase();
-        return viewOk && statusOk && (!q || hay.includes(q));
-      });
-      if(currentView==='senior') visible = visible.sort((a,b)=>({blocked:0,in_progress:1,todo:2,done:3}[a.status]-{blocked:0,in_progress:1,todo:2,done:3}[b.status])).slice(0,8);
+      const tasks = getFilteredTasks();
+      const byStatus = statuses.reduce((acc, s) => (acc[s] = tasks.filter(t => t.status === s), acc), {});
+      const ag = agendaText();
 
-      taskList.innerHTML = visible.map(task=>`
-        <article class="task">
-          <div class="task-top">
-            <div>
-              <div class="task-title">${esc(task.title)}</div>
-              <div class="task-desc">${esc(task.summary)}</div>
-            </div>
-            <div class="meta">
-              <span class="pill ${task.priority}">${esc(task.priority)}</span>
-              <span class="pill ${task.status}">${esc(task.status)}</span>
-              <span class="pill">${esc(task.area || 'general')}</span>
-            </div>
+      el('columns').innerHTML = statuses.map(status => `
+        <div class="col" ondragover="event.preventDefault()" ondrop="window.__dropTask(event, '${status}')">
+          <div class="col-head"><strong>${statusLabels[status]}</strong><span class="count">${byStatus[status].length}</span></div>
+          <div class="dropzone">
+            ${byStatus[status].map(task => renderTask(task)).join('') || '<div class="small" style="padding:8px 6px;color:#8a97ad;">Drop tasks here</div>'}
           </div>
-          <div class="task-desc">${esc(task.details || '')}</div>
-          ${task.notes ? `<div class="task-desc"><b>Notes:</b> ${esc(task.notes)}</div>` : ''}
-          <div class="meta">
-            <span class="pill">Owner: ${esc(task.owner || 'us')}</span>
-            <span class="pill">ID: ${esc(task.id)}</span>
-            ${task.dependencies?.length ? `<span class="pill">Deps: ${esc(task.dependencies.join(', '))}</span>` : ''}
-            ${task.blockers?.length ? `<span class="pill blocked">Blockers: ${esc(task.blockers.join(', '))}</span>` : ''}
-          </div>
-          ${task.subtasks?.length ? `<div class="subtasks">${task.subtasks.map(s=>`<div class="subtask"><span>${esc(s)}</span><span class="pill">subtask</span></div>`).join('')}</div>` : ''}
-          <div class="actions">
-            <button class="btn secondary" data-edit="${esc(task.id)}" type="button">Edit</button>
-            <button class="btn danger" data-del="${esc(task.id)}" type="button">Delete</button>
-          </div>
-        </article>
-      `).join('') || '<div class="task"><div class="task-title">No tasks match this filter.</div></div>';
+        </div>
+      `).join('');
 
-      document.querySelectorAll('[data-edit]').forEach(btn => btn.onclick = () => { const t = tasks.find(x=>x.id===btn.dataset.edit); if(t) fillForm(t); });
-      document.querySelectorAll('[data-del]').forEach(btn => btn.onclick = () => removeTask(btn.dataset.del));
+      const agenda = document.querySelectorAll('.agenda-item');
+      if(agenda[0]) agenda[0].querySelector('span').textContent = ag.today.length ? `${ag.today.length} tasks need attention today.` : 'No urgent items today.';
+      if(agenda[1]) agenda[1].querySelector('span').textContent = ag.week.length ? `${ag.week.length} tasks are planned for this week.` : 'Nothing scheduled for this week yet.';
+      if(agenda[2]) agenda[2].querySelector('span').textContent = ag.dueSoon.length ? `${ag.dueSoon.length} tasks are due soon or overdue.` : 'No deadlines in the next few days.';
+
+      stats();
+      saveTasks();
     }
 
-    async function removeTask(id){
-      if (!confirm('Delete this task?')) return;
-      const idx = tasks.findIndex(t => t.id === id);
-      const task = tasks[idx];
-      tasks = tasks.filter(t => t.id !== id);
-      saveLocal();
+    function renderTask(task){
+      const tpl = taskTemplate.content.cloneNode(true);
+      const card = tpl.querySelector('.card-task');
+      card.dataset.id = task.id;
+      card.draggable = true;
+      card.querySelector('.task-title').textContent = task.title;
+      card.querySelector('.task-desc').textContent = task.summary || '';
+      const badges = card.querySelector('.badges');
+      const due = dueState(task);
+      const dueLabel = task.due_date ? `Due ${task.due_date}` : 'No due date';
+      badges.innerHTML = `
+        <span class="pill ${statusColors[task.status] || ''}">${statusLabels[task.status]}</span>
+        <span class="pill ${task.priority}">${task.priority}</span>
+        <span class="pill">${esc(task.area || 'general')}</span>
+        <span class="pill date ${due === 'overdue' ? 'blocked' : due === 'soon' ? 'needs_review' : ''}">${esc(dueLabel)}</span>
+      `;
+      const notes = [task.notes, task.details].filter(Boolean).join(' • ');
+      card.querySelector('.notes').textContent = notes;
+      card.querySelector('.edit-btn').onclick = () => fillForm(task);
+      card.querySelector('.delete-btn').onclick = () => deleteTask(task.id);
+      card.ondragstart = e => { e.dataTransfer.setData('text/plain', task.id); };
+      return card.outerHTML;
+    }
+
+    window.__dropTask = function(event, status){
+      event.preventDefault();
+      const id = event.dataTransfer.getData('text/plain');
+      const task = state.tasks.find(t => t.id === id);
+      if (!task) return;
+      task.status = status;
+      task.updated_at = new Date().toISOString();
       render();
-      updateStats();
-      if (projectId && task?.__rowId) {
-        await sb.from('tasks').delete().eq('id', task.__rowId);
-        await sb.from('task_history').insert({ task_id: task.__rowId, user_id: currentUser?.id || null, field_changed: 'delete', old_value: '', new_value: '', note: 'Task deleted' });
-      }
     }
 
-    async function persistTask(task){
-      if (!projectId || fallbackMode) return;
-      if (!task.__rowId) {
-        const { data, error } = await sb.from('tasks').insert({
-          project_id: projectId,
-          title: task.title,
-          summary: task.summary,
-          details: task.details,
-          area: task.area,
-          priority: task.priority,
-          status: task.status,
-          owner: task.owner,
-          blockers: task.blockers,
-          dependencies: task.dependencies,
-          subtasks: task.subtasks,
-          notes: task.notes,
-          created_by: currentUser?.id || null,
-          updated_by: currentUser?.id || null
-        }).select('*').single();
-        if (error) throw error;
-        task.__rowId = data.id;
-      } else {
-        const { error } = await sb.from('tasks').update({
-          title: task.title,
-          summary: task.summary,
-          details: task.details,
-          area: task.area,
-          priority: task.priority,
-          status: task.status,
-          owner: task.owner,
-          blockers: task.blockers,
-          dependencies: task.dependencies,
-          subtasks: task.subtasks,
-          notes: task.notes,
-          updated_by: currentUser?.id || null
-        }).eq('id', task.__rowId);
-        if (error) throw error;
-      }
+    function fillForm(task){
+      taskForm.taskId.value = task.id;
+      taskForm.title.value = task.title || '';
+      taskForm.status.value = task.status || 'backlog';
+      taskForm.priority.value = task.priority || 'medium';
+      taskForm.owner.value = task.owner || 'us';
+      taskForm.area.value = task.area || '';
+      taskForm.due_date.value = task.due_date || '';
+      taskForm.agenda_day.value = task.agenda_day || '';
+      taskForm.summary.value = task.summary || '';
+      taskForm.details.value = task.details || '';
+      taskForm.notes.value = task.notes || '';
+      taskForm.subtasks.value = (task.subtasks || []).join(' | ');
+      taskForm.blockers.value = (task.blockers || []).join(' | ');
+      taskForm.dependencies.value = (task.dependencies || []).join(' | ');
+      el('editorTitle').textContent = `Edit ${task.id}`;
     }
 
-    taskForm.addEventListener('submit', async e => {
+    function clearForm(){
+      taskForm.reset();
+      taskForm.owner.value = 'us';
+      el('editorTitle').textContent = 'Add or update task';
+    }
+
+    function deleteTask(id){
+      if (!confirm('Delete this task?')) return;
+      state.tasks = state.tasks.filter(t => t.id !== id);
+      clearForm();
+      render();
+    }
+
+    taskForm.addEventListener('submit', e => {
       e.preventDefault();
       const f = new FormData(taskForm);
-      const id = f.get('taskId') || ('TASK-' + String(tasks.length + 1).padStart(3, '0'));
-      const existing = tasks.find(t => t.id === id);
-      const next = {
+      const id = f.get('taskId') || `TASK-${String(state.tasks.length + 1).padStart(3,'0')}`;
+      const existing = state.tasks.find(t => t.id === id);
+      const updated = {
         id,
         title: f.get('title'),
-        area: f.get('area') || 'general',
-        priority: f.get('priority'),
         status: f.get('status'),
+        priority: f.get('priority'),
         owner: f.get('owner') || 'us',
+        area: f.get('area') || 'general',
+        due_date: f.get('due_date') || '',
+        agenda_day: f.get('agenda_day') || '',
         summary: f.get('summary') || '',
         details: f.get('details') || '',
-        notes: f.get('notes') || existing?.notes || '',
+        notes: f.get('notes') || '',
         subtasks: splitList(f.get('subtasks')),
         blockers: splitList(f.get('blockers')),
         dependencies: splitList(f.get('dependencies')),
-        updated_at: new Date().toISOString(),
-        __rowId: existing?.__rowId || null
+        updated_at: new Date().toISOString()
       };
-      const idx = tasks.findIndex(t => t.id === id);
-      if (idx >= 0) tasks[idx] = { ...tasks[idx], ...next };
-      else tasks.unshift(next);
-      try { await persistTask(tasks[idx >= 0 ? idx : 0]); } catch (err) { fallbackMode = true; loginError.textContent = err.message || String(err); }
-      saveLocal(); render(); updateStats(); clearForm();
+      if (existing) Object.assign(existing, updated);
+      else state.tasks.unshift(updated);
+      render();
+      clearForm();
     });
 
-    $('#clearFormBtn').onclick = clearForm;
-    $('#refreshBtn').onclick = async () => { try { await loadTasks(); render(); updateStats(); } catch (e) { loginError.textContent = e.message || String(e); } };
-    $('#exportBtn').onclick = () => { const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'project-atlas-tasks.json'; a.click(); URL.revokeObjectURL(url); };
-    $('#logoutBtn').onclick = async () => { localStorage.removeItem('project_atlas_demo_mode'); tasks = loadLocal(); render(); updateStats(); clearForm(); };
-    $('#loginBtn').onclick = () => { loginError.textContent = 'Login is disabled for now.'; };
-    $('#signupBtn').onclick = () => { loginError.textContent = 'Signup is disabled for now.'; };
-    $('#demoBtn').onclick = () => { localStorage.setItem('project_atlas_demo_mode','1'); loginOverlay.classList.add('hidden'); app.classList.remove('hidden'); tasks = loadLocal(); fallbackMode = true; currentUser = { email: 'demo@atlas.local', app_role: 'editor' }; setUserUI(); updateStats(); render(); };
+    el('searchInput').addEventListener('input', e => { state.search = e.target.value; render(); });
+    el('statusFilter').addEventListener('change', e => { state.filter = e.target.value; localStorage.setItem(VIEW_KEY, state.filter); render(); });
+    el('clearBtn').onclick = clearForm;
+    el('exportBtn').onclick = () => {
+      const blob = new Blob([JSON.stringify(state.tasks, null, 2)], { type:'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'nexus-tasks.json'; a.click(); URL.revokeObjectURL(url);
+    };
+    el('resetBtn').onclick = () => {
+      if (!confirm('Reset to demo tasks?')) return;
+      state.tasks = seedTasks.slice();
+      clearForm();
+      render();
+    };
 
-    searchInput.addEventListener('input', render);
-    statusFilter.addEventListener('change', render);
-    tabs.forEach(tab => tab.addEventListener('click', () => { tabs.forEach(t => t.classList.remove('active')); tab.classList.add('active'); currentView = tab.dataset.view; render(); }));
-
-    async function boot(){
-      currentUser = { email: 'local mode', app_role: 'admin' };
-      tasks = loadLocal();
-      fallbackMode = true;
-      loginOverlay.classList.add('hidden'); app.classList.remove('hidden');
-      setUserUI(); updateStats(); render();
+    function boot(){
+      el('loginOverlay').classList.add('hidden');
+      document.body.classList.remove('loading');
+      if (!state.filter) state.filter = 'all';
+      el('statusFilter').value = state.filter;
+      render();
     }
 
-    boot().catch(err => { loginError.textContent = err.message || String(err); tasks = loadLocal(); fallbackMode = true; });
+    boot();
   </script>
 </body>
 </html>
