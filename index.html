@@ -91,7 +91,7 @@
 <body>
   <div class="grain"></div>
 
-  <div class="login" id="loginOverlay">
+  <div class="login hidden" id="loginOverlay">
     <div class="login-card card">
       <div class="eyebrow">Private shared task board</div>
       <h2>Project Atlas</h2>
@@ -224,7 +224,7 @@
     const roleBadge=$('#roleBadge'), userBadge=$('#userBadge');
     let tasks=[];
     let currentView='senior';
-    let currentUser=null;
+    let currentUser={ email: 'local mode', app_role: 'admin' };
     let projectId=null;
     let fallbackMode=false;
 
@@ -255,29 +255,10 @@
       $('#formTitle').textContent='Edit task '+task.id;
     }
 
-    async function getRole(){
-      if(!currentUser) return;
-      const { data } = await supabase.from('profiles').select('role,email').eq('id', currentUser.id).maybeSingle();
-      if (data) { currentUser.app_role = data.role; if (data.email) currentUser.email = data.email; }
-    }
-
     async function loadTasks(){
-      fallbackMode = false;
-      const { data: proj, error: projErr } = await supabase.from('projects').select('*').eq('name','Project Atlas').limit(1);
-      if (projErr) throw projErr;
-      if (proj?.length) projectId = proj[0].id;
-      else {
-        const { data: created, error: createErr } = await supabase.from('projects').insert({ name:'Project Atlas', summary:'Dashboard for senior visibility and daily execution', phase:'build', status:'active' }).select('*').single();
-        if (createErr) throw createErr;
-        projectId = created.id;
-      }
-      const { data: rows, error } = await supabase.from('tasks').select('*').eq('project_id', projectId).order('created_at', { ascending:false });
-      if (error) throw error;
-      tasks = (rows && rows.length ? rows : []).map(r => ({
-        id:r.id, title:r.title, area:r.area, priority:r.priority, status:r.status, owner:r.owner,
-        summary:r.summary, details:r.details, notes:r.notes || '', subtasks:r.subtasks || [], blockers:r.blockers || [], dependencies:r.dependencies || [], updated_at:r.updated_at
-      }));
-      if (!tasks.length) tasks = seedTasks.slice();
+      fallbackMode = true;
+      tasks = loadLocal();
+      return;
       saveLocal();
     }
 
@@ -424,48 +405,21 @@
     $('#clearFormBtn').onclick = clearForm;
     $('#refreshBtn').onclick = async () => { try { await loadTasks(); render(); updateStats(); } catch (e) { loginError.textContent = e.message || String(e); } };
     $('#exportBtn').onclick = () => { const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'project-atlas-tasks.json'; a.click(); URL.revokeObjectURL(url); };
-    $('#logoutBtn').onclick = async () => { await supabase.auth.signOut(); localStorage.removeItem('project_atlas_demo_mode'); };
-    $('#loginBtn').onclick = async () => {
-      const email = $('#emailInput').value.trim();
-      const password = $('#passwordInput').value;
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) loginError.textContent = error.message;
-    };
-    $('#signupBtn').onclick = async () => {
-      const email = $('#emailInput').value.trim();
-      const password = $('#passwordInput').value;
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) loginError.textContent = error.message;
-      else loginError.textContent = 'Account created. Check email if confirmations are enabled.';
-    };
-    $('#demoBtn').onclick = () => { $('#emailInput').value = 'demo@atlas.local'; $('#passwordInput').value = DEMO_PASSWORD; localStorage.setItem('project_atlas_demo_mode','1'); loginOverlay.classList.add('hidden'); app.classList.remove('hidden'); tasks = loadLocal(); fallbackMode = true; currentUser = { email: 'demo@atlas.local', app_role: 'editor' }; setUserUI(); updateStats(); render(); };
+    $('#logoutBtn').onclick = async () => { localStorage.removeItem('project_atlas_demo_mode'); tasks = loadLocal(); render(); updateStats(); clearForm(); };
+    $('#loginBtn').onclick = () => { loginError.textContent = 'Login is disabled for now.'; };
+    $('#signupBtn').onclick = () => { loginError.textContent = 'Signup is disabled for now.'; };
+    $('#demoBtn').onclick = () => { localStorage.setItem('project_atlas_demo_mode','1'); loginOverlay.classList.add('hidden'); app.classList.remove('hidden'); tasks = loadLocal(); fallbackMode = true; currentUser = { email: 'demo@atlas.local', app_role: 'editor' }; setUserUI(); updateStats(); render(); };
 
     searchInput.addEventListener('input', render);
     statusFilter.addEventListener('change', render);
     tabs.forEach(tab => tab.addEventListener('click', () => { tabs.forEach(t => t.classList.remove('active')); tab.classList.add('active'); currentView = tab.dataset.view; render(); }));
 
     async function boot(){
-      const { data } = await supabase.auth.getSession();
-      currentUser = data.session?.user || null;
-      if (currentUser) {
-        await getRole();
-        try { await loadTasks(); } catch(e) { fallbackMode = true; tasks = loadLocal(); loginError.textContent = 'Using local fallback: ' + (e.message || e); }
-        loginOverlay.classList.add('hidden'); app.classList.remove('hidden');
-      } else {
-        loginOverlay.classList.remove('hidden'); app.classList.add('hidden');
-      }
+      currentUser = { email: 'local mode', app_role: 'admin' };
+      tasks = loadLocal();
+      fallbackMode = true;
+      loginOverlay.classList.add('hidden'); app.classList.remove('hidden');
       setUserUI(); updateStats(); render();
-      supabase.auth.onAuthStateChange(async (_event, session) => {
-        currentUser = session?.user || null;
-        if (currentUser) {
-          await getRole();
-          try { await loadTasks(); } catch(e) { fallbackMode = true; tasks = loadLocal(); loginError.textContent = 'Using local fallback: ' + (e.message || e); }
-          loginOverlay.classList.add('hidden'); app.classList.remove('hidden');
-        } else {
-          loginOverlay.classList.remove('hidden'); app.classList.add('hidden');
-        }
-        setUserUI(); updateStats(); render();
-      });
     }
 
     boot().catch(err => { loginError.textContent = err.message || String(err); tasks = loadLocal(); fallbackMode = true; });
