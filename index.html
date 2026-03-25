@@ -3,39 +3,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Project Atlas</title>
+  <title>Project Atlas — Task Board</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root{--bg:#0b1020;--line:rgba(255,255,255,.09);--text:#ecf1ff;--muted:#9aa7c2;--accent:#78f2c2;--accent2:#8b9cff;--bad:#ff7d7d;--radius:22px;--shadow:0 20px 60px rgba(0,0,0,.35)}
-    *{box-sizing:border-box} html,body{height:100%} body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:radial-gradient(circle at top left, rgba(120,242,194,.16), transparent 30%), radial-gradient(circle at top right, rgba(139,156,255,.16), transparent 28%), linear-gradient(180deg,#060913 0%,var(--bg) 35%,#080b16 100%);color:var(--text);overflow-x:hidden}
-    .grain{pointer-events:none;position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E");opacity:.28;mix-blend-mode:soft-light}
-    .wrap{max-width:1420px;margin:0 auto;padding:24px}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;align-items:stretch;margin-bottom:18px}.brand,.panel,.stat,.task,.login-card{backdrop-filter:blur(18px);background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));border:1px solid var(--line);box-shadow:var(--shadow);border-radius:var(--radius)}
-    .brand{padding:28px;position:relative;overflow:hidden}.brand:after{content:'';position:absolute;inset:auto -90px -90px auto;width:240px;height:240px;background:radial-gradient(circle, rgba(120,242,194,.25), transparent 62%);filter:blur(8px)}
-    .eyebrow{text-transform:uppercase;letter-spacing:.22em;color:var(--accent);font-size:12px;font-weight:700;margin-bottom:12px} h1{margin:0;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:clamp(44px,5vw,72px);line-height:.9}.sub{margin-top:14px;color:var(--muted);font-size:15px;max-width:780px;line-height:1.6}
-    .brand-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}.mini{padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)} .mini b{display:block;font-size:18px;margin-bottom:4px} .mini span{color:var(--muted);font-size:13px}
-    .stack{display:grid;gap:18px}.panel{padding:20px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.panel-title{font-weight:700;letter-spacing:.01em;font-size:18px}.panel-note{color:var(--muted);font-size:13px}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}.stat{padding:18px;position:relative;overflow:hidden}.stat:before{content:'';position:absolute;inset:0 auto auto 0;width:3px;height:100%;background:linear-gradient(180deg,var(--accent),transparent)} .stat .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.15em}.stat .v{font-size:34px;font-weight:700;margin-top:8px;line-height:1}.stat .d{color:var(--muted);font-size:13px;margin-top:8px}
-    .tabs{display:inline-flex;gap:8px;padding:6px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)} .tab{border:0;cursor:pointer;border-radius:999px;padding:10px 14px;color:var(--muted);background:transparent;font-weight:600;transition:.2s ease} .tab.active{background:rgba(120,242,194,.16);color:var(--text)}
-    .toolbar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin:10px 0 18px}.searchbox{flex:1;min-width:240px;display:flex;gap:8px}
-    input,select,textarea{width:100%;padding:12px 14px;color:var(--text);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:14px;outline:none;font:inherit} input::placeholder,textarea::placeholder{color:#72809b}
-    .btn{border:0;border-radius:14px;padding:12px 16px;cursor:pointer;color:#08111d;background:linear-gradient(135deg,var(--accent),#c7ffef);font-weight:800;letter-spacing:.01em;box-shadow:0 14px 30px rgba(120,242,194,.16)} .btn.secondary{color:var(--text);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);box-shadow:none}.btn.danger{background:linear-gradient(135deg,#ff7d7d,#ffd0d0);color:#2d0f0f}
-    .layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:start}.tasklist{display:grid;gap:12px}.task{padding:16px;display:grid;gap:10px}.task-top{display:flex;justify-content:space-between;gap:10px;align-items:start}.task-title{font-weight:700;font-size:16px}.task-meta{display:flex;flex-wrap:wrap;gap:8px}.pill{font-size:12px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:var(--muted)} .pill.high{color:#ffe4a0;background:rgba(255,206,102,.12)} .pill.medium{color:#b9c5ff;background:rgba(139,156,255,.12)} .pill.low{color:#9be8bd;background:rgba(116,240,167,.10)} .pill.done{color:#9ff1c2} .pill.blocked{color:#ffb1b1;background:rgba(255,125,125,.12)}
-    .task-desc{color:var(--muted);font-size:13px;line-height:1.55}.subtasks{display:grid;gap:8px}.subtask,.note-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:13px}.task-actions{display:flex;gap:8px;flex-wrap:wrap}
-    .editor{position:sticky;top:18px}.editor form{display:grid;gap:10px}.editor h3{margin:0 0 10px 0;font-size:18px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px} textarea{min-height:90px;resize:vertical}.save-note{font-size:12px;color:var(--muted)}
-    .login{position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,4,10,.76);backdrop-filter:blur(16px);z-index:50}.login-card{width:min(560px, calc(100vw - 28px));padding:24px}.login-card h2{margin:0 0 6px 0;font-family:'Cormorant Garamond',serif;font-size:40px}.login-card p{margin:0 0 18px 0;color:var(--muted);line-height:1.6}.login-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.error{color:var(--bad);font-size:13px;min-height:18px}.hidden{display:none !important}
-    @media (max-width:1100px){.hero,.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.editor{position:static}} @media (max-width:640px){.wrap{padding:14px}.brand-grid,.stats,.grid2{grid-template-columns:1fr}.toolbar{flex-direction:column}.tabs{width:100%;overflow:auto}}
+    :root{
+      --bg:#f5f7fb; --panel:#ffffff; --panel2:#fbfcff; --line:#dfe7f2; --text:#152033; --muted:#63708a;
+      --accent:#2f80ed; --accent2:#14b8a6; --good:#15803d; --warn:#b45309; --bad:#dc2626; --shadow:0 18px 50px rgba(32,48,77,.08);
+      --radius:24px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--text);background:
+      radial-gradient(circle at 10% 0%, rgba(47,128,237,.12), transparent 28%),
+      radial-gradient(circle at 90% 10%, rgba(20,184,166,.10), transparent 26%),
+      linear-gradient(180deg,#eef4ff 0%, #f7f9fd 38%, #eef3f9 100%);}
+    .grain{pointer-events:none;position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");opacity:.55}
+    .wrap{max-width:1440px;margin:0 auto;padding:24px}
+    .shell{display:grid;grid-template-columns:1.4fr .8fr;gap:20px;align-items:start}
+    .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .hero{padding:26px;position:relative;overflow:hidden}
+    .hero::after{content:'';position:absolute;right:-40px;top:-40px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle, rgba(47,128,237,.16), transparent 65%)}
+    .eyebrow{font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+    h1{font-family:'Fraunces',serif;font-size:clamp(40px,5vw,74px);line-height:.92;margin:0 0 14px 0}
+    .lead{color:var(--muted);max-width:860px;line-height:1.7;font-size:15px}
+    .agenda{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .agenda-item{padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:#fff}
+    .agenda-item b{display:block;margin-bottom:4px;font-size:14px}
+    .agenda-item span{color:var(--muted);font-size:13px;line-height:1.5}
+    .topbar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}
+    .role-badge{padding:10px 14px;border-radius:999px;background:#e8f2ff;color:#1f4f9d;font-weight:700;font-size:13px;border:1px solid #cfe0ff}
+    .user-badge{color:var(--muted);font-size:13px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+    .stat{padding:16px;border-radius:18px;border:1px solid var(--line);background:#fff;position:relative;overflow:hidden}
+    .stat::before{content:'';position:absolute;left:0;top:0;height:100%;width:4px;background:linear-gradient(180deg,var(--accent),var(--accent2))}
+    .stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em}
+    .stat .v{font-family:'Fraunces',serif;font-size:32px;line-height:1;margin-top:8px}
+    .stat .d{font-size:13px;color:var(--muted);margin-top:8px}
+    .section{padding:20px}
+    .section-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}
+    .section-title{font-size:18px;font-weight:800}
+    .section-note{font-size:13px;color:var(--muted)}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 14px;font-weight:700;color:var(--muted);cursor:pointer}
+    .tab.active{background:#eaf2ff;color:#1f4f9d;border-color:#cfe0ff}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-bottom:16px}
+    .searchbox{display:flex;gap:10px;flex:1;min-width:280px}
+    input,select,textarea{width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--text);font:inherit;outline:none}
+    textarea{min-height:92px;resize:vertical}
+    input::placeholder,textarea::placeholder{color:#8a97ad}
+    .btn{border:0;border-radius:14px;padding:12px 16px;cursor:pointer;font-weight:800;background:linear-gradient(135deg,var(--accent),#5db0ff);color:#fff;box-shadow:0 10px 28px rgba(47,128,237,.18)}
+    .btn.secondary{background:#fff;color:var(--text);border:1px solid var(--line);box-shadow:none}
+    .btn.danger{background:linear-gradient(135deg,#ef4444,#fb7185)}
+    .layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+    .tasklist{display:grid;gap:12px}
+    .task{padding:16px;border-radius:20px;border:1px solid var(--line);background:#fff}
+    .task-top{display:flex;justify-content:space-between;gap:12px;align-items:start}
+    .task-title{font-weight:800;font-size:16px;line-height:1.25}
+    .task-desc{color:var(--muted);font-size:13px;line-height:1.6;margin-top:6px}
+    .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#f5f8fc;border:1px solid var(--line);font-size:12px;color:#516077}
+    .pill.high{background:#fff7e8;color:#8d5f00;border-color:#ffe1aa}
+    .pill.medium{background:#eef4ff;color:#2458a8;border-color:#d8e6ff}
+    .pill.low{background:#eefbf6;color:#0f7a53;border-color:#d4f4e7}
+    .pill.done{background:#edfdf2;color:#15703a;border-color:#cdeed8}
+    .pill.blocked{background:#fff1f1;color:#b42318;border-color:#ffd7d7}
+    .subtasks{display:grid;gap:8px;margin-top:12px}
+    .subtask,.note-item{padding:10px 12px;border-radius:14px;background:#f8fbff;border:1px solid #e2eaf5;font-size:13px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .editor{padding:20px;position:sticky;top:18px}
+    .editor h3{margin:0 0 10px 0;font-size:18px}
+    .save-note{color:var(--muted);font-size:12px;margin-bottom:10px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .login{position:fixed;inset:0;background:rgba(241,245,255,.78);backdrop-filter:blur(18px);display:grid;place-items:center;z-index:50}
+    .login-card{width:min(620px, calc(100vw - 28px));padding:24px}
+    .login-card h2{font-family:'Fraunces',serif;font-size:40px;margin:0 0 8px 0}
+    .login-card p{margin:0 0 16px 0;color:var(--muted);line-height:1.6}
+    .login-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .error{min-height:18px;color:#b42318;font-size:13px;margin-top:6px}
+    .hidden{display:none !important}
+    @media (max-width:1100px){.shell,.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.agenda{grid-template-columns:1fr}.editor{position:static}}
+    @media (max-width:640px){.wrap{padding:14px}.toolbar,.topbar{flex-direction:column;align-items:stretch}.searchbox,.grid2{grid-template-columns:1fr;flex-direction:column}.stats{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <div class="grain"></div>
+
   <div class="login" id="loginOverlay">
-    <div class="login-card">
-      <div class="eyebrow">Private Project Dashboard</div>
+    <div class="login-card card">
+      <div class="eyebrow">Private shared task board</div>
       <h2>Project Atlas</h2>
-      <p>Sign in to access the shared task board. This version stores data in Supabase so multiple people can see and edit it.</p>
+      <p>Sign in to access the team backlog, senior summary, agenda, and shared notes. This version uses Supabase for real login and shared data.</p>
       <div class="grid2">
         <input id="emailInput" type="email" placeholder="Email" />
         <input id="passwordInput" type="password" placeholder="Password" />
@@ -43,138 +103,260 @@
       <div class="login-actions">
         <button class="btn" id="loginBtn">Sign in</button>
         <button class="btn secondary" id="signupBtn">Create account</button>
-        <button class="btn secondary" id="demoBtn">Demo password (local)</button>
+        <button class="btn secondary" id="demoBtn">Demo local mode</button>
       </div>
       <div class="error" id="loginError"></div>
-      <div class="save-note">Supabase auth is real. Demo mode is just for local testing.</div>
     </div>
   </div>
+
   <div class="wrap hidden" id="app">
-    <section class="hero">
-      <div class="brand panel">
-        <div class="eyebrow">Project Control Room</div>
-        <h1>Task system for senior visibility and daily execution.</h1>
-        <div class="sub">Two-layer project management: a clean senior overview plus a detailed working backlog that can grow without turning into a mess.</div><div class="brand-grid"><div class="mini"><b>1</b><span>Add or edit tasks</span></div><div class="mini"><b>2</b><span>Track notes and blockers</span></div><div class="mini"><b>3</b><span>Share live with the team</span></div></div>
-        <div class="brand-grid">
-          <div class="mini"><b id="statOpen">0</b><span>open tasks</span></div>
-          <div class="mini"><b id="statBlocked">0</b><span>blocked tasks</span></div>
-          <div class="mini"><b id="statDone">0</b><span>done tasks</span></div>
-        </div>
+    <div class="topbar">
+      <div class="eyebrow">Project Atlas</div>
+      <div class="role-badge" id="roleBadge">Role: editor</div>
+      <div class="user-badge" id="userBadge">Signed out</div>
+    </div>
+
+    <section class="hero card">
+      <div class="eyebrow">Today’s agenda</div>
+      <h1>Simple, brighter task management for the whole team.</h1>
+      <div class="lead">
+        Focus on what matters today: clear priorities, visible blockers, and easy updates. The same board works for seniors and the working team, but the view is cleaner and easier to scan.
       </div>
-      <div class="stack">
-        <div class="panel">
-          <div class="panel-head"><div><div class="panel-title">Senior view</div><div class="panel-note">What’s happening, what’s blocked, what’s next.</div></div><div class="panel-note" id="userBadge">Signed out</div></div>
-          <div class="stats">
-            <div class="stat"><div class="k">Project phase</div><div class="v" id="phaseStat">Build</div><div class="d">Current operating phase</div></div>
-            <div class="stat"><div class="k">Backlog</div><div class="v" id="backlogCount">0</div><div class="d">Tasks tracked</div></div>
-            <div class="stat"><div class="k">Blockers</div><div class="v" id="blockedCount">0</div><div class="d">Need attention</div></div>
-            <div class="stat"><div class="k">Velocity</div><div class="v" id="velocityStat">0%</div><div class="d">Finished tasks</div></div>
-          </div>
-        </div>
+      <div class="agenda">
+        <div class="agenda-item"><b>1. Review the senior view</b><span>See what’s done, what’s blocked, and what needs attention today.</span></div>
+        <div class="agenda-item"><b>2. Update the backlog</b><span>Add tasks, notes, blockers, and subtasks without hunting through the app.</span></div>
+        <div class="agenda-item"><b>3. Keep everyone in sync</b><span>Shared login + shared database so multiple people see the same board.</span></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Project phase</div><div class="v" id="phaseStat">Build</div><div class="d">Current operating phase</div></div>
+        <div class="stat"><div class="k">Backlog</div><div class="v" id="backlogCount">0</div><div class="d">Tasks tracked</div></div>
+        <div class="stat"><div class="k">Blockers</div><div class="v" id="blockedCount">0</div><div class="d">Need attention</div></div>
+        <div class="stat"><div class="k">Velocity</div><div class="v" id="velocityStat">0%</div><div class="d">Finished tasks</div></div>
       </div>
     </section>
-    <section class="panel">
-      <div class="panel-head"><div><div class="panel-title">Task views</div><div class="panel-note">Senior summary and working backlog in one place.</div></div><div class="tabs"><button class="tab active" data-view="senior">Senior</button><button class="tab" data-view="backlog">Backlog</button><button class="tab" data-view="all">All</button></div></div>
-      <div class="toolbar">
-        <div class="searchbox"><input id="searchInput" placeholder="Search tasks, blockers, owners, notes…" /><select id="statusFilter"><option value="all">All statuses</option><option value="todo">Todo</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn secondary" id="exportBtn">Export JSON</button><button class="btn secondary" id="logoutBtn">Logout</button></div>
+
+    <section class="section card" style="margin-top:18px;">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Task board</div>
+          <div class="section-note">Senior summary, backlog and detail editing in one place.</div>
+        </div>
+        <div class="tabs">
+          <button class="tab active" data-view="senior">Senior</button>
+          <button class="tab" data-view="backlog">Backlog</button>
+          <button class="tab" data-view="all">All</button>
+        </div>
       </div>
+
+      <div class="toolbar">
+        <div class="searchbox">
+          <input id="searchInput" placeholder="Search tasks, owners, blockers, notes…" />
+          <select id="statusFilter">
+            <option value="all">All statuses</option>
+            <option value="todo">Todo</option>
+            <option value="in_progress">In progress</option>
+            <option value="blocked">Blocked</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn secondary" id="exportBtn">Export JSON</button>
+          <button class="btn secondary" id="refreshBtn">Refresh</button>
+          <button class="btn secondary" id="logoutBtn">Logout</button>
+        </div>
+      </div>
+
       <div class="layout">
-        <div><div class="tasklist" id="taskList"></div></div>
-        <div class="editor panel">
+        <div>
+          <div class="tasklist" id="taskList"></div>
+        </div>
+
+        <aside class="editor card">
           <h3 id="formTitle">Add / update task</h3>
-          <div class="save-note">Changes are saved in Supabase and sync for everyone.</div>
+          <div class="save-note">Changes are saved to Supabase. If the database is unavailable, the board falls back to local storage.</div>
           <form id="taskForm">
             <input type="hidden" name="taskId" />
             <input name="title" placeholder="Task title" required />
-            <div class="grid2"><select name="priority"><option value="high">High priority</option><option value="medium">Medium priority</option><option value="low">Low priority</option></select><select name="status"><option value="todo">Todo</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div>
-            <div class="grid2"><input name="owner" placeholder="Owner / team" value="us" /><input name="area" placeholder="Area (campaign / company / prospect)" /></div>
-            <textarea name="summary" placeholder="Short summary"></textarea><textarea name="details" placeholder="Details"></textarea>
+            <div class="grid2">
+              <select name="priority"><option value="high">High priority</option><option value="medium">Medium priority</option><option value="low">Low priority</option></select>
+              <select name="status"><option value="todo">Todo</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select>
+            </div>
+            <div class="grid2">
+              <input name="owner" placeholder="Owner / team" value="us" />
+              <input name="area" placeholder="Area (campaign / company / prospect)" />
+            </div>
+            <textarea name="summary" placeholder="Short summary"></textarea>
+            <textarea name="details" placeholder="Details"></textarea>
             <textarea name="notes" placeholder="Project notes / blockers / context"></textarea>
-            <input name="subtasks" placeholder="Subtasks separated by |" /><input name="blockers" placeholder="Blockers separated by |" /><input name="dependencies" placeholder="Dependencies separated by |" />
-            <div class="task-actions"><button class="btn" type="submit">Save task</button><button class="btn secondary" type="button" id="clearFormBtn">Clear form</button></div>
+            <input name="subtasks" placeholder="Subtasks separated by |" />
+            <input name="blockers" placeholder="Blockers separated by |" />
+            <input name="dependencies" placeholder="Dependencies separated by |" />
+            <div class="actions">
+              <button class="btn" type="submit">Save task</button>
+              <button class="btn secondary" type="button" id="clearFormBtn">Clear form</button>
+            </div>
           </form>
-        </div>
+        </aside>
       </div>
     </section>
   </div>
+
   <script>
     const SUPABASE_URL='https://nakxlxouxfyycdydrack.supabase.co';
     const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ha3hseG91eGZ5eWNkeWRyYWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzI1NzIsImV4cCI6MjA5MDAwODU3Mn0.NyiWAA2ABdqc6EBXFO46utD4x356rcYMFyT9y5tAApc';
-    const SECRET='atlas';
-    const LOCAL_FALLBACK_KEY='project_atlas_tasks_v2';
-    const authKey='project_atlas_auth_v1';
+    const LOCAL_KEY='project_atlas_local_v3';
+    const DEMO_PASSWORD='atlas';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-    const seedTasks=[{id:'TASK-001',title:'Confirm Salesforce Campaign field API names',level:'task',area:'campaign',priority:'high',status:'done',owner:'us',summary:'Validate the Campaign fields before wiring production queries.',details:'Use FieldDefinition to confirm exact API names for Campaign_Brief__c and related targeting fields.',subtasks:['Run FieldDefinition query','Confirm target fields','Update workflow queries'],blockers:[],dependencies:[],notes:'',updated_at:new Date().toISOString()},{id:'TASK-002',title:'Build campaign worker',level:'task',area:'campaign',priority:'high',status:'in_progress',owner:'us',summary:'Read Salesforce Campaign and build the campaign rule pack.',details:'Campaign Brief is the main source of truth. Structured fields become targeting and exclusion rules.',subtasks:['Fetch campaign','Parse brief','Normalize targeting fields'],blockers:[],dependencies:['TASK-001'],notes:'',updated_at:new Date().toISOString()},{id:'TASK-003',title:'Build company worker',level:'task',area:'company',priority:'high',status:'in_progress',owner:'us',summary:'Resolve account, classify fit, and detect parent/child/manual review.',details:'Parent resolution priority: LinkedIn -> Website -> Name. No auto merge.',subtasks:['Account read','Parent lookup','Manual review routing'],blockers:[],dependencies:['TASK-002'],notes:'',updated_at:new Date().toISOString()},{id:'TASK-004',title:'Build prospect worker',level:'task',area:'prospect',priority:'medium',status:'todo',owner:'us',summary:'Reuse existing contacts and find missing decision-makers.',details:'Only runs when company is campaign eligible and prospecting allowed.',subtasks:['Existing contact check','Gap detection','New prospect discovery'],blockers:[],dependencies:['TASK-003'],notes:'',updated_at:new Date().toISOString()},{id:'TASK-005',title:'Build result handler',level:'task',area:'ops',priority:'medium',status:'todo',owner:'us',summary:'Write results back to Salesforce and keep outputs clean.',details:'Update Account, create Contacts, and preserve a clear audit trail.',subtasks:['Company result handling','Prospect result handling','Audit logging'],blockers:[],dependencies:['TASK-003','TASK-004'],notes:'',updated_at:new Date().toISOString()},{id:'TASK-006',title:'Create senior dashboard view',level:'task',area:'web',priority:'medium',status:'todo',owner:'us',summary:'A clean top-level view for management.',details:'Show progress, blockers, backlog, and what matters next.',subtasks:['Summary cards','Blocker view','Milestone view'],blockers:[],dependencies:[],notes:'',updated_at:new Date().toISOString()}];
-    const $=s=>document.querySelector(s), loginOverlay=$('#loginOverlay'), app=$('#app'), loginError=$('#loginError'), taskList=$('#taskList'), taskForm=$('#taskForm'), searchInput=$('#searchInput'), statusFilter=$('#statusFilter'), tabs=[...document.querySelectorAll('.tab')], userBadge=$('#userBadge');
-    let currentUser=null, tasks=[], currentView='senior', projectId=null;
 
-    const esc=s=>String(s||'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]));
+    const seedTasks=[
+      {id:'TASK-001',title:'Confirm Salesforce Campaign field API names',area:'campaign',priority:'high',status:'done',owner:'us',summary:'Validate the Campaign fields before wiring production queries.',details:'Use FieldDefinition to confirm exact API names for Campaign_Brief__c and related targeting fields.',notes:'Finished this already; keep as the canonical field checklist.',subtasks:['Run FieldDefinition query','Confirm target fields','Update workflow queries'],blockers:[],dependencies:[],updated_at:new Date().toISOString()},
+      {id:'TASK-002',title:'Build campaign worker',area:'campaign',priority:'high',status:'in_progress',owner:'us',summary:'Read Salesforce Campaign and build the campaign rule pack.',details:'Campaign Brief is the main source of truth. Structured fields become targeting and exclusion rules.',notes:'Need a clean version senior leadership can read in one glance.',subtasks:['Fetch campaign','Parse brief','Normalize targeting fields'],blockers:[],dependencies:['TASK-001'],updated_at:new Date().toISOString()},
+      {id:'TASK-003',title:'Build company worker',area:'company',priority:'high',status:'in_progress',owner:'us',summary:'Resolve account, classify fit, and detect parent/child/manual review.',details:'Parent resolution priority: LinkedIn -> Website -> Name. No auto merge.',notes:'Manual review should be visible and easy to understand.',subtasks:['Account read','Parent lookup','Manual review routing'],blockers:[],dependencies:['TASK-002'],updated_at:new Date().toISOString()},
+      {id:'TASK-004',title:'Build prospect worker',area:'prospect',priority:'medium',status:'todo',owner:'us',summary:'Reuse existing contacts and find missing decision-makers.',details:'Only runs when company is campaign eligible and prospecting allowed.',notes:'This should feel lightweight, not cluttered.',subtasks:['Existing contact check','Gap detection','New prospect discovery'],blockers:[],dependencies:['TASK-003'],updated_at:new Date().toISOString()},
+      {id:'TASK-005',title:'Build result handler',area:'ops',priority:'medium',status:'todo',owner:'us',summary:'Write results back to Salesforce and keep outputs clean.',details:'Update Account, create Contacts, and preserve a clear audit trail.',notes:'Need history so people can see what changed and why.',subtasks:['Company result handling','Prospect result handling','Audit logging'],blockers:[],dependencies:['TASK-003','TASK-004'],updated_at:new Date().toISOString()},
+      {id:'TASK-006',title:'Create senior dashboard view',area:'web',priority:'medium',status:'todo',owner:'us',summary:'A clean top-level view for management.',details:'Show progress, blockers, backlog, and what matters next.',notes:'This is the management-ready overview.',subtasks:['Summary cards','Blocker view','Milestone view'],blockers:[],dependencies:[],updated_at:new Date().toISOString()}
+    ];
+
+    const $=s=>document.querySelector(s);
+    const loginOverlay=$('#loginOverlay'), app=$('#app'), loginError=$('#loginError');
+    const taskList=$('#taskList'), taskForm=$('#taskForm'), searchInput=$('#searchInput'), statusFilter=$('#statusFilter');
+    const tabs=[...document.querySelectorAll('.tab')];
+    const roleBadge=$('#roleBadge'), userBadge=$('#userBadge');
+    let tasks=[];
+    let currentView='senior';
+    let currentUser=null;
+    let projectId=null;
+    let fallbackMode=false;
+
+    function esc(s){return String(s||'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]))}
     function splitList(v){return String(v||'').split('|').map(s=>s.trim()).filter(Boolean)}
-    function toCSV(tasks){return JSON.stringify(tasks,null,2)}
-    function setUserBadge(){ userBadge.textContent = currentUser ? `${currentUser.email} (${currentUser.app_role||'editor'})` : 'Signed out'; }
-
-    async function bootstrap(){
-      const { data } = await supabase.auth.getSession();
-      currentUser = data.session?.user || null;
-      if (currentUser) { await loadRole(); await loadRemote(); showApp(); }
-      else { showLogin(); }
-      supabase.auth.onAuthStateChange(async (_event, session) => {
-        currentUser = session?.user || null;
-        if (currentUser) { await loadRole(); await loadRemote(); showApp(); }
-        else { showLogin(); }
-      });
+    function saveLocal(){ localStorage.setItem(LOCAL_KEY, JSON.stringify(tasks)); }
+    function loadLocal(){ const v=localStorage.getItem(LOCAL_KEY); return v ? JSON.parse(v) : seedTasks.slice(); }
+    function setUserUI(){
+      const email = currentUser?.email || 'Signed out';
+      const role = currentUser?.app_role || 'editor';
+      userBadge.textContent = email;
+      roleBadge.textContent = `Role: ${role}`;
+    }
+    function clearForm(){ taskForm.reset(); taskForm.owner.value='us'; taskForm.taskId.value=''; $('#formTitle').textContent='Add / update task'; }
+    function fillForm(task){
+      taskForm.taskId.value=task.id;
+      taskForm.title.value=task.title||'';
+      taskForm.priority.value=task.priority||'medium';
+      taskForm.status.value=task.status||'todo';
+      taskForm.owner.value=task.owner||'us';
+      taskForm.area.value=task.area||'';
+      taskForm.summary.value=task.summary||'';
+      taskForm.details.value=task.details||'';
+      taskForm.notes.value=task.notes||'';
+      taskForm.subtasks.value=(task.subtasks||[]).join(' | ');
+      taskForm.blockers.value=(task.blockers||[]).join(' | ');
+      taskForm.dependencies.value=(task.dependencies||[]).join(' | ');
+      $('#formTitle').textContent='Edit task '+task.id;
     }
 
-    function showApp(){ loginOverlay.classList.add('hidden'); app.classList.remove('hidden'); setUserBadge(); updateStats(); render(); }
-    function showLogin(){ loginOverlay.classList.remove('hidden'); app.classList.add('hidden'); setUserBadge(); }
-
-    async function signIn(){
-      const email = $('#emailInput').value.trim();
-      const password = $('#passwordInput').value;
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) loginError.textContent = error.message;
-    }
-    async function signUp(){
-      const email = $('#emailInput').value.trim();
-      const password = $('#passwordInput').value;
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) loginError.textContent = error.message;
-      else loginError.textContent = 'Account created. Check email if confirmations are enabled.';
-    }
-    async function signOut(){ await supabase.auth.signOut(); }
-
-    async function loadRole(){
-      if (!currentUser) return;
+    async function getRole(){
+      if(!currentUser) return;
       const { data } = await supabase.from('profiles').select('role,email').eq('id', currentUser.id).maybeSingle();
-      if (data) { currentUser.app_role = data.role; currentUser.email = data.email || currentUser.email; }
+      if (data) { currentUser.app_role = data.role; if (data.email) currentUser.email = data.email; }
     }
 
-    async function loadRemote(){
-      const { data: projects, error: pErr } = await supabase.from('projects').select('*').eq('name','Project Atlas').limit(1);
-      if (pErr) throw pErr;
-      if (projects?.length) projectId = projects[0].id;
+    async function loadTasks(){
+      fallbackMode = false;
+      const { data: proj, error: projErr } = await supabase.from('projects').select('*').eq('name','Project Atlas').limit(1);
+      if (projErr) throw projErr;
+      if (proj?.length) projectId = proj[0].id;
       else {
-        const { data: created, error } = await supabase.from('projects').insert({ name:'Project Atlas', summary:'Dashboard for senior visibility and daily execution', phase:'build', status:'active' }).select('*').single();
-        if (error) throw error;
+        const { data: created, error: createErr } = await supabase.from('projects').insert({ name:'Project Atlas', summary:'Dashboard for senior visibility and daily execution', phase:'build', status:'active' }).select('*').single();
+        if (createErr) throw createErr;
         projectId = created.id;
       }
       const { data: rows, error } = await supabase.from('tasks').select('*').eq('project_id', projectId).order('created_at', { ascending:false });
-      if (error) { console.warn('Remote load failed, falling back to localStorage', error); tasks = loadLocal(); projectId = null; return; }
-      tasks = rows.map(r => ({
-        id: r.id, title:r.title, level:'task', area:r.area, priority:r.priority, status:r.status, owner:r.owner,
-        summary:r.summary, details:r.details, subtasks:r.subtasks || [], blockers:r.blockers || [], dependencies:r.dependencies || [], notes:r.notes || '', updated_at:r.updated_at
+      if (error) throw error;
+      tasks = (rows && rows.length ? rows : []).map(r => ({
+        id:r.id, title:r.title, area:r.area, priority:r.priority, status:r.status, owner:r.owner,
+        summary:r.summary, details:r.details, notes:r.notes || '', subtasks:r.subtasks || [], blockers:r.blockers || [], dependencies:r.dependencies || [], updated_at:r.updated_at
       }));
-      if (!tasks.length) { tasks = seedTasks.slice(); }
+      if (!tasks.length) tasks = seedTasks.slice();
       saveLocal();
     }
 
-    function loadLocal(){ const saved = localStorage.getItem(LOCAL_FALLBACK_KEY); return saved ? JSON.parse(saved) : seedTasks.slice(); }
-    function saveLocal(){ localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(tasks)); }
+    function updateStats(){
+      const open=tasks.filter(t=>t.status!=='done').length;
+      const blocked=tasks.filter(t=>t.status==='blocked').length;
+      const done=tasks.filter(t=>t.status==='done').length;
+      const total=tasks.length || 1;
+      $('#statOpen').textContent=open;
+      $('#statBlocked').textContent=blocked;
+      $('#statDone').textContent=done;
+      $('#backlogCount').textContent=tasks.length;
+      $('#blockedCount').textContent=blocked;
+      $('#velocityStat').textContent=Math.round((done/total)*100)+'%';
+      $('#phaseStat').textContent=open>0?'Build':'Stabilize';
+    }
+
+    function render(){
+      const q=searchInput.value.toLowerCase().trim();
+      const st=statusFilter.value;
+      let visible=tasks.filter(t=>{
+        const viewOk = currentView==='all' || (currentView==='senior' ? ['high','blocked'].includes(t.priority) || t.status!=='todo' : true);
+        const statusOk = st==='all' || t.status===st;
+        const hay=[t.title,t.summary,t.details,t.owner,t.area,t.notes,...(t.blockers||[]),...(t.dependencies||[]),...(t.subtasks||[])].join(' ').toLowerCase();
+        return viewOk && statusOk && (!q || hay.includes(q));
+      });
+      if(currentView==='senior') visible = visible.sort((a,b)=>({blocked:0,in_progress:1,todo:2,done:3}[a.status]-{blocked:0,in_progress:1,todo:2,done:3}[b.status])).slice(0,8);
+
+      taskList.innerHTML = visible.map(task=>`
+        <article class="task">
+          <div class="task-top">
+            <div>
+              <div class="task-title">${esc(task.title)}</div>
+              <div class="task-desc">${esc(task.summary)}</div>
+            </div>
+            <div class="meta">
+              <span class="pill ${task.priority}">${esc(task.priority)}</span>
+              <span class="pill ${task.status}">${esc(task.status)}</span>
+              <span class="pill">${esc(task.area || 'general')}</span>
+            </div>
+          </div>
+          <div class="task-desc">${esc(task.details || '')}</div>
+          ${task.notes ? `<div class="task-desc"><b>Notes:</b> ${esc(task.notes)}</div>` : ''}
+          <div class="meta">
+            <span class="pill">Owner: ${esc(task.owner || 'us')}</span>
+            <span class="pill">ID: ${esc(task.id)}</span>
+            ${task.dependencies?.length ? `<span class="pill">Deps: ${esc(task.dependencies.join(', '))}</span>` : ''}
+            ${task.blockers?.length ? `<span class="pill blocked">Blockers: ${esc(task.blockers.join(', '))}</span>` : ''}
+          </div>
+          ${task.subtasks?.length ? `<div class="subtasks">${task.subtasks.map(s=>`<div class="subtask"><span>${esc(s)}</span><span class="pill">subtask</span></div>`).join('')}</div>` : ''}
+          <div class="actions">
+            <button class="btn secondary" data-edit="${esc(task.id)}" type="button">Edit</button>
+            <button class="btn danger" data-del="${esc(task.id)}" type="button">Delete</button>
+          </div>
+        </article>
+      `).join('') || '<div class="task"><div class="task-title">No tasks match this filter.</div></div>';
+
+      document.querySelectorAll('[data-edit]').forEach(btn => btn.onclick = () => { const t = tasks.find(x=>x.id===btn.dataset.edit); if(t) fillForm(t); });
+      document.querySelectorAll('[data-del]').forEach(btn => btn.onclick = () => removeTask(btn.dataset.del));
+    }
+
+    async function removeTask(id){
+      if (!confirm('Delete this task?')) return;
+      const idx = tasks.findIndex(t => t.id === id);
+      const task = tasks[idx];
+      tasks = tasks.filter(t => t.id !== id);
+      saveLocal();
+      render();
+      updateStats();
+      if (projectId && task?.__rowId) {
+        await supabase.from('tasks').delete().eq('id', task.__rowId);
+        await supabase.from('task_history').insert({ task_id: task.__rowId, user_id: currentUser?.id || null, field_changed: 'delete', old_value: '', new_value: '', note: 'Task deleted' });
+      }
+    }
 
     async function persistTask(task){
-      if (projectId) {
-        const payload = {
+      if (!projectId || fallbackMode) return;
+      if (!task.__rowId) {
+        const { data, error } = await supabase.from('tasks').insert({
           project_id: projectId,
           title: task.title,
           summary: task.summary,
@@ -187,46 +369,106 @@
           dependencies: task.dependencies,
           subtasks: task.subtasks,
           notes: task.notes,
-          updated_at: new Date().toISOString()
-        };
-        if (task.__existingRowId) {
-          const { error } = await supabase.from('tasks').update(payload).eq('id', task.__existingRowId);
-          if (error) throw error;
-        } else {
-          const { data, error } = await supabase.from('tasks').insert(payload).select('*').single();
-          if (error) throw error;
-          task.__existingRowId = data.id;
-        }
-        await logHistory(task.__existingRowId || task.id, 'updated', '', task.status);
+          created_by: currentUser?.id || null,
+          updated_by: currentUser?.id || null
+        }).select('*').single();
+        if (error) throw error;
+        task.__rowId = data.id;
+      } else {
+        const { error } = await supabase.from('tasks').update({
+          title: task.title,
+          summary: task.summary,
+          details: task.details,
+          area: task.area,
+          priority: task.priority,
+          status: task.status,
+          owner: task.owner,
+          blockers: task.blockers,
+          dependencies: task.dependencies,
+          subtasks: task.subtasks,
+          notes: task.notes,
+          updated_by: currentUser?.id || null
+        }).eq('id', task.__rowId);
+        if (error) throw error;
       }
-      saveLocal();
     }
 
-    async function logHistory(taskId, field, oldValue, newValue, note=''){
-      if (!projectId) return;
-      await supabase.from('task_history').insert({ task_id: taskId, user_id: currentUser?.id || null, field_changed: field, old_value: oldValue, new_value: newValue, note });
+    taskForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = new FormData(taskForm);
+      const id = f.get('taskId') || ('TASK-' + String(tasks.length + 1).padStart(3, '0'));
+      const existing = tasks.find(t => t.id === id);
+      const next = {
+        id,
+        title: f.get('title'),
+        area: f.get('area') || 'general',
+        priority: f.get('priority'),
+        status: f.get('status'),
+        owner: f.get('owner') || 'us',
+        summary: f.get('summary') || '',
+        details: f.get('details') || '',
+        notes: f.get('notes') || existing?.notes || '',
+        subtasks: splitList(f.get('subtasks')),
+        blockers: splitList(f.get('blockers')),
+        dependencies: splitList(f.get('dependencies')),
+        updated_at: new Date().toISOString(),
+        __rowId: existing?.__rowId || null
+      };
+      const idx = tasks.findIndex(t => t.id === id);
+      if (idx >= 0) tasks[idx] = { ...tasks[idx], ...next };
+      else tasks.unshift(next);
+      try { await persistTask(tasks[idx >= 0 ? idx : 0]); } catch (err) { fallbackMode = true; loginError.textContent = err.message || String(err); }
+      saveLocal(); render(); updateStats(); clearForm();
+    });
+
+    $('#clearFormBtn').onclick = clearForm;
+    $('#refreshBtn').onclick = async () => { try { await loadTasks(); render(); updateStats(); } catch (e) { loginError.textContent = e.message || String(e); } };
+    $('#exportBtn').onclick = () => { const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'project-atlas-tasks.json'; a.click(); URL.revokeObjectURL(url); };
+    $('#logoutBtn').onclick = async () => { await supabase.auth.signOut(); localStorage.removeItem('project_atlas_demo_mode'); };
+    $('#loginBtn').onclick = async () => {
+      const email = $('#emailInput').value.trim();
+      const password = $('#passwordInput').value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) loginError.textContent = error.message;
+    };
+    $('#signupBtn').onclick = async () => {
+      const email = $('#emailInput').value.trim();
+      const password = $('#passwordInput').value;
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) loginError.textContent = error.message;
+      else loginError.textContent = 'Account created. Check email if confirmations are enabled.';
+    };
+    $('#demoBtn').onclick = () => { $('#emailInput').value = 'demo@atlas.local'; $('#passwordInput').value = DEMO_PASSWORD; localStorage.setItem('project_atlas_demo_mode','1'); loginOverlay.classList.add('hidden'); app.classList.remove('hidden'); tasks = loadLocal(); fallbackMode = true; currentUser = { email: 'demo@atlas.local', app_role: 'editor' }; setUserUI(); updateStats(); render(); };
+
+    searchInput.addEventListener('input', render);
+    statusFilter.addEventListener('change', render);
+    tabs.forEach(tab => tab.addEventListener('click', () => { tabs.forEach(t => t.classList.remove('active')); tab.classList.add('active'); currentView = tab.dataset.view; render(); }));
+
+    async function boot(){
+      const { data } = await supabase.auth.getSession();
+      currentUser = data.session?.user || null;
+      if (currentUser) {
+        await getRole();
+        try { await loadTasks(); } catch(e) { fallbackMode = true; tasks = loadLocal(); loginError.textContent = 'Using local fallback: ' + (e.message || e); }
+        loginOverlay.classList.add('hidden'); app.classList.remove('hidden');
+      } else {
+        loginOverlay.classList.remove('hidden'); app.classList.add('hidden');
+      }
+      setUserUI(); updateStats(); render();
+      supabase.auth.onAuthStateChange(async (_event, session) => {
+        currentUser = session?.user || null;
+        if (currentUser) {
+          await getRole();
+          try { await loadTasks(); } catch(e) { fallbackMode = true; tasks = loadLocal(); loginError.textContent = 'Using local fallback: ' + (e.message || e); }
+          loginOverlay.classList.add('hidden'); app.classList.remove('hidden');
+        } else {
+          loginOverlay.classList.remove('hidden'); app.classList.add('hidden');
+        }
+        setUserUI(); updateStats(); render();
+      });
     }
 
-    function render(){
-      const q=searchInput.value.toLowerCase().trim(), st=statusFilter.value;
-      let filtered=tasks.filter(t=>{const matchView=currentView==='all'||(currentView==='senior' ? ['high','blocked'].includes(t.priority)||t.status!=='todo' : true); const matchStatus=st==='all'||t.status===st; const hay=[t.title,t.summary,t.details,t.owner,t.area,t.notes,...(t.blockers||[]),...(t.dependencies||[]),...(t.subtasks||[])].join(' ').toLowerCase(); return matchView&&matchStatus&&(!q||hay.includes(q))});
-      if(currentView==='senior') filtered=filtered.sort((a,b)=>({blocked:0,in_progress:1,todo:2,done:3}[a.status]-{blocked:0,in_progress:1,todo:2,done:3}[b.status])).slice(0,8);
-      taskList.innerHTML=filtered.map(task=>`<article class="task"><div class="task-top"><div><div class="task-title">${esc(task.title)}</div><div class="task-desc">${esc(task.summary)}</div></div><div class="task-meta"><span class="pill ${task.priority}">${esc(task.priority)}</span><span class="pill ${task.status}">${esc(task.status)}</span><span class="pill">${esc(task.area||'general')}</span></div></div><div class="task-desc">${esc(task.details||'')}</div>${task.notes?`<div class="task-desc"><b>Notes:</b> ${esc(task.notes)}</div>`:''}<div class="task-meta"><span class="pill">Owner: ${esc(task.owner||'us')}</span><span class="pill">ID: ${esc(task.id)}</span>${task.dependencies?.length?`<span class="pill">Deps: ${esc(task.dependencies.join(', '))}</span>`:''}${task.blockers?.length?`<span class="pill blocked">Blockers: ${esc(task.blockers.join(', '))}</span>`:''}</div>${task.subtasks?.length?`<div class="subtasks">${task.subtasks.map(s=>`<div class="subtask"><span>${esc(s)}</span><span class="pill">subtask</span></div>`).join('')}</div>`:''}<div class="task-actions"><button class="btn secondary" data-edit="${esc(task.id)}" type="button">Edit</button><button class="btn danger" data-del="${esc(task.id)}" type="button">Delete</button></div></article>`).join('')||'<div class="task"><div class="task-title">No tasks match this filter.</div></div>';
-      document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const t=tasks.find(x=>x.id===b.dataset.edit); if(t) fillForm(t)});
-      document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>removeTask(b.dataset.del));
-    }
-
-    function updateStats(){const open=tasks.filter(t=>t.status!=='done').length, blocked=tasks.filter(t=>t.status==='blocked').length, done=tasks.filter(t=>t.status==='done').length, total=tasks.length||1; $('#statOpen').textContent=open; $('#statBlocked').textContent=blocked; $('#statDone').textContent=done; $('#backlogCount').textContent=tasks.length; $('#blockedCount').textContent=blocked; $('#velocityStat').textContent=Math.round((done/total)*100)+'%'; $('#phaseStat').textContent=open>0?'Build':'Stabilize'}
-    function fillForm(task){taskForm.taskId.value=task.id; taskForm.title.value=task.title||''; taskForm.priority.value=task.priority||'medium'; taskForm.status.value=task.status||'todo'; taskForm.owner.value=task.owner||'us'; taskForm.area.value=task.area||''; taskForm.summary.value=task.summary||''; taskForm.details.value=task.details||''; taskForm.notes.value=task.notes||''; taskForm.subtasks.value=(task.subtasks||[]).join(' | '); taskForm.blockers.value=(task.blockers||[]).join(' | '); taskForm.dependencies.value=(task.dependencies||[]).join(' | '); $('#formTitle').textContent='Edit task '+task.id; }
-    function clearForm(){taskForm.reset(); taskForm.owner.value='us'; taskForm.taskId.value=''; $('#formTitle').textContent='Add / update task';}
-    async function removeTask(id){ if(!confirm('Delete this task?')) return; const task=tasks.find(x=>x.id===id); tasks=tasks.filter(x=>x.id!==id); if(projectId && task?.__existingRowId){ await supabase.from('tasks').delete().eq('id', task.__existingRowId); await supabase.from('task_history').insert({ task_id: task.__existingRowId, user_id: currentUser?.id || null, field_changed:'delete', old_value:'', new_value:'', note:'Task deleted' }); } saveLocal(); render(); updateStats(); }
-
-    taskForm.addEventListener('submit',async e=>{e.preventDefault(); const f=new FormData(taskForm), id=f.get('taskId')||('TASK-'+String(tasks.length+1).padStart(3,'0')), split=v=>splitList(v), next={id,title:f.get('title'),level:'task',area:f.get('area')||'general',priority:f.get('priority'),status:f.get('status'),owner:f.get('owner')||'us',summary:f.get('summary')||'',details:f.get('details')||'',subtasks:split(f.get('subtasks')),blockers:split(f.get('blockers')),dependencies:split(f.get('dependencies')),notes:tasks.find(t=>t.id===id)?.notes || '',updated_at:new Date().toISOString()}; const idx=tasks.findIndex(t=>t.id===id); if(idx>=0) tasks[idx]={...tasks[idx],...next}; else tasks.unshift(next); try{ await persistTask(tasks[idx>=0?idx:0]); }catch(err){ loginError.textContent = err.message || String(err); } saveLocal(); render(); updateStats(); clearForm(); });
-    async function refresh(){ if (currentUser && projectId) { const { data, error } = await supabase.from('tasks').select('*').eq('project_id', projectId).order('created_at', { ascending:false }); if (!error && data) { tasks = data.map(r => ({ id:r.id, title:r.title, level:'task', area:r.area, priority:r.priority, status:r.status, owner:r.owner, summary:r.summary, details:r.details, subtasks:r.subtasks || [], blockers:r.blockers || [], dependencies:r.dependencies || [], notes:r.notes || '', updated_at:r.updated_at, __existingRowId:r.id })); saveLocal(); render(); updateStats(); } } }
-    searchInput.addEventListener('input',render); statusFilter.addEventListener('change',render); tabs.forEach(tab=>tab.addEventListener('click',()=>{tabs.forEach(t=>t.classList.remove('active')); tab.classList.add('active'); currentView=tab.dataset.view; render()}));
-    $('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(tasks,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='project-atlas-tasks.json'; a.click(); URL.revokeObjectURL(url)}; $('#clearFormBtn').onclick=clearForm; $('#logoutBtn').onclick=signOut; $('#loginBtn').onclick=signIn; $('#signupBtn').onclick=signUp;
-    $('#demoBtn').onclick=()=>{ $('#emailInput').value='demo@atlas.local'; $('#passwordInput').value=SECRET; localStorage.setItem(authKey,'1'); localStorage.setItem('project_atlas_demo_mode','1'); currentUser={ email:'demo@atlas.local', role:'editor' }; tasks=loadLocal(); showApp(); }
-    bootstrap().then(refresh).catch(err=>{ console.error(err); loginError.textContent = err.message || String(err); });
+    boot().catch(err => { loginError.textContent = err.message || String(err); tasks = loadLocal(); fallbackMode = true; });
   </script>
 </body>
 </html>
