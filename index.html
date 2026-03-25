@@ -206,11 +206,11 @@
   </div>
 
   <script>
-    const SUPABASE_URL='https://nakxlxouxfyycdydrack.supabase.co';
+    const SUPABASE_URL='https://nakxlxouxfyycdydrack.sb.co';
     const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ha3hseG91eGZ5eWNkeWRyYWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzI1NzIsImV4cCI6MjA5MDAwODU3Mn0.NyiWAA2ABdqc6EBXFO46utD4x356rcYMFyT9y5tAApc';
     const LOCAL_KEY='project_atlas_local_v3';
     const DEMO_PASSWORD='atlas';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
     const seedTasks=[
       {id:'TASK-001',title:'Confirm Salesforce Campaign field API names',area:'campaign',priority:'high',status:'done',owner:'us',summary:'Validate the Campaign fields before wiring production queries.',details:'Use FieldDefinition to confirm exact API names for Campaign_Brief__c and related targeting fields.',notes:'Finished this already; keep as the canonical field checklist.',subtasks:['Run FieldDefinition query','Confirm target fields','Update workflow queries'],blockers:[],dependencies:[],updated_at:new Date().toISOString()},
@@ -333,15 +333,15 @@
       render();
       updateStats();
       if (projectId && task?.__rowId) {
-        await supabase.from('tasks').delete().eq('id', task.__rowId);
-        await supabase.from('task_history').insert({ task_id: task.__rowId, user_id: currentUser?.id || null, field_changed: 'delete', old_value: '', new_value: '', note: 'Task deleted' });
+        await sb.from('tasks').delete().eq('id', task.__rowId);
+        await sb.from('task_history').insert({ task_id: task.__rowId, user_id: currentUser?.id || null, field_changed: 'delete', old_value: '', new_value: '', note: 'Task deleted' });
       }
     }
 
     async function persistTask(task){
       if (!projectId || fallbackMode) return;
       if (!task.__rowId) {
-        const { data, error } = await supabase.from('tasks').insert({
+        const { data, error } = await sb.from('tasks').insert({
           project_id: projectId,
           title: task.title,
           summary: task.summary,
@@ -360,7 +360,7 @@
         if (error) throw error;
         task.__rowId = data.id;
       } else {
-        const { error } = await supabase.from('tasks').update({
+        const { error } = await sb.from('tasks').update({
           title: task.title,
           summary: task.summary,
           details: task.details,
