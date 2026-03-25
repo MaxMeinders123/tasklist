@@ -54,7 +54,7 @@
       <div class="brand panel">
         <div class="eyebrow">Project Control Room</div>
         <h1>Task system for senior visibility and daily execution.</h1>
-        <div class="sub">Two-layer project management: a clean senior overview plus a detailed working backlog that can grow without turning into a mess.</div>
+        <div class="sub">Two-layer project management: a clean senior overview plus a detailed working backlog that can grow without turning into a mess.</div><div class="brand-grid"><div class="mini"><b>1</b><span>Add or edit tasks</span></div><div class="mini"><b>2</b><span>Track notes and blockers</span></div><div class="mini"><b>3</b><span>Share live with the team</span></div></div>
         <div class="brand-grid">
           <div class="mini"><b id="statOpen">0</b><span>open tasks</span></div>
           <div class="mini"><b id="statBlocked">0</b><span>blocked tasks</span></div>
@@ -90,6 +90,7 @@
             <div class="grid2"><select name="priority"><option value="high">High priority</option><option value="medium">Medium priority</option><option value="low">Low priority</option></select><select name="status"><option value="todo">Todo</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div>
             <div class="grid2"><input name="owner" placeholder="Owner / team" value="us" /><input name="area" placeholder="Area (campaign / company / prospect)" /></div>
             <textarea name="summary" placeholder="Short summary"></textarea><textarea name="details" placeholder="Details"></textarea>
+            <textarea name="notes" placeholder="Project notes / blockers / context"></textarea>
             <input name="subtasks" placeholder="Subtasks separated by |" /><input name="blockers" placeholder="Blockers separated by |" /><input name="dependencies" placeholder="Dependencies separated by |" />
             <div class="task-actions"><button class="btn" type="submit">Save task</button><button class="btn secondary" type="button" id="clearFormBtn">Clear form</button></div>
           </form>
@@ -111,16 +112,16 @@
     const esc=s=>String(s||'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]));
     function splitList(v){return String(v||'').split('|').map(s=>s.trim()).filter(Boolean)}
     function toCSV(tasks){return JSON.stringify(tasks,null,2)}
-    function setUserBadge(){ userBadge.textContent = currentUser ? `${currentUser.email} (${currentUser.role||'editor'})` : 'Signed out'; }
+    function setUserBadge(){ userBadge.textContent = currentUser ? `${currentUser.email} (${currentUser.app_role||'editor'})` : 'Signed out'; }
 
     async function bootstrap(){
       const { data } = await supabase.auth.getSession();
       currentUser = data.session?.user || null;
-      if (currentUser) { await loadRemote(); showApp(); }
+      if (currentUser) { await loadRole(); await loadRemote(); showApp(); }
       else { showLogin(); }
       supabase.auth.onAuthStateChange(async (_event, session) => {
         currentUser = session?.user || null;
-        if (currentUser) { await loadRemote(); showApp(); }
+        if (currentUser) { await loadRole(); await loadRemote(); showApp(); }
         else { showLogin(); }
       });
     }
@@ -142,6 +143,12 @@
       else loginError.textContent = 'Account created. Check email if confirmations are enabled.';
     }
     async function signOut(){ await supabase.auth.signOut(); }
+
+    async function loadRole(){
+      if (!currentUser) return;
+      const { data } = await supabase.from('profiles').select('role,email').eq('id', currentUser.id).maybeSingle();
+      if (data) { currentUser.app_role = data.role; currentUser.email = data.email || currentUser.email; }
+    }
 
     async function loadRemote(){
       const { data: projects, error: pErr } = await supabase.from('projects').select('*').eq('name','Project Atlas').limit(1);
@@ -210,7 +217,7 @@
     }
 
     function updateStats(){const open=tasks.filter(t=>t.status!=='done').length, blocked=tasks.filter(t=>t.status==='blocked').length, done=tasks.filter(t=>t.status==='done').length, total=tasks.length||1; $('#statOpen').textContent=open; $('#statBlocked').textContent=blocked; $('#statDone').textContent=done; $('#backlogCount').textContent=tasks.length; $('#blockedCount').textContent=blocked; $('#velocityStat').textContent=Math.round((done/total)*100)+'%'; $('#phaseStat').textContent=open>0?'Build':'Stabilize'}
-    function fillForm(task){taskForm.taskId.value=task.id; taskForm.title.value=task.title||''; taskForm.priority.value=task.priority||'medium'; taskForm.status.value=task.status||'todo'; taskForm.owner.value=task.owner||'us'; taskForm.area.value=task.area||''; taskForm.summary.value=task.summary||''; taskForm.details.value=task.details||''; taskForm.subtasks.value=(task.subtasks||[]).join(' | '); taskForm.blockers.value=(task.blockers||[]).join(' | '); taskForm.dependencies.value=(task.dependencies||[]).join(' | '); $('#formTitle').textContent='Edit task '+task.id; }
+    function fillForm(task){taskForm.taskId.value=task.id; taskForm.title.value=task.title||''; taskForm.priority.value=task.priority||'medium'; taskForm.status.value=task.status||'todo'; taskForm.owner.value=task.owner||'us'; taskForm.area.value=task.area||''; taskForm.summary.value=task.summary||''; taskForm.details.value=task.details||''; taskForm.notes.value=task.notes||''; taskForm.subtasks.value=(task.subtasks||[]).join(' | '); taskForm.blockers.value=(task.blockers||[]).join(' | '); taskForm.dependencies.value=(task.dependencies||[]).join(' | '); $('#formTitle').textContent='Edit task '+task.id; }
     function clearForm(){taskForm.reset(); taskForm.owner.value='us'; taskForm.taskId.value=''; $('#formTitle').textContent='Add / update task';}
     async function removeTask(id){ if(!confirm('Delete this task?')) return; const task=tasks.find(x=>x.id===id); tasks=tasks.filter(x=>x.id!==id); if(projectId && task?.__existingRowId){ await supabase.from('tasks').delete().eq('id', task.__existingRowId); await supabase.from('task_history').insert({ task_id: task.__existingRowId, user_id: currentUser?.id || null, field_changed:'delete', old_value:'', new_value:'', note:'Task deleted' }); } saveLocal(); render(); updateStats(); }
 
