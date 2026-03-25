@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Atlas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0b1020;--line:rgba(255,255,255,.09);--text:#ecf1ff;--muted:#9aa7c2;--accent:#78f2c2;--accent2:#8b9cff;--bad:#ff7d7d;--radius:22px;--shadow:0 20px 60px rgba(0,0,0,.35)}
+    *{box-sizing:border-box} html,body{height:100%} body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:radial-gradient(circle at top left, rgba(120,242,194,.16), transparent 30%), radial-gradient(circle at top right, rgba(139,156,255,.16), transparent 28%), linear-gradient(180deg,#060913 0%,var(--bg) 35%,#080b16 100%);color:var(--text);overflow-x:hidden}
+    .grain{pointer-events:none;position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E");opacity:.28;mix-blend-mode:soft-light}
+    .wrap{max-width:1420px;margin:0 auto;padding:24px}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;align-items:stretch;margin-bottom:18px}.brand,.panel,.stat,.task,.login-card{backdrop-filter:blur(18px);background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));border:1px solid var(--line);box-shadow:var(--shadow);border-radius:var(--radius)}
+    .brand{padding:28px;position:relative;overflow:hidden}.brand:after{content:'';position:absolute;inset:auto -90px -90px auto;width:240px;height:240px;background:radial-gradient(circle, rgba(120,242,194,.25), transparent 62%);filter:blur(8px)}
+    .eyebrow{text-transform:uppercase;letter-spacing:.22em;color:var(--accent);font-size:12px;font-weight:700;margin-bottom:12px} h1{margin:0;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:clamp(44px,5vw,72px);line-height:.9}.sub{margin-top:14px;color:var(--muted);font-size:15px;max-width:780px;line-height:1.6}
+    .brand-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}.mini{padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)} .mini b{display:block;font-size:18px;margin-bottom:4px} .mini span{color:var(--muted);font-size:13px}
+    .stack{display:grid;gap:18px}.panel{padding:20px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.panel-title{font-weight:700;letter-spacing:.01em;font-size:18px}.panel-note{color:var(--muted);font-size:13px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}.stat{padding:18px;position:relative;overflow:hidden}.stat:before{content:'';position:absolute;inset:0 auto auto 0;width:3px;height:100%;background:linear-gradient(180deg,var(--accent),transparent)} .stat .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.15em}.stat .v{font-size:34px;font-weight:700;margin-top:8px;line-height:1}.stat .d{color:var(--muted);font-size:13px;margin-top:8px}
+    .tabs{display:inline-flex;gap:8px;padding:6px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)} .tab{border:0;cursor:pointer;border-radius:999px;padding:10px 14px;color:var(--muted);background:transparent;font-weight:600;transition:.2s ease} .tab.active{background:rgba(120,242,194,.16);color:var(--text)}
+    .toolbar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin:10px 0 18px}.searchbox{flex:1;min-width:240px;display:flex;gap:8px}
+    input,select,textarea{width:100%;padding:12px 14px;color:var(--text);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:14px;outline:none;font:inherit} input::placeholder,textarea::placeholder{color:#72809b}
+    .btn{border:0;border-radius:14px;padding:12px 16px;cursor:pointer;color:#08111d;background:linear-gradient(135deg,var(--accent),#c7ffef);font-weight:800;letter-spacing:.01em;box-shadow:0 14px 30px rgba(120,242,194,.16)} .btn.secondary{color:var(--text);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);box-shadow:none}
+    .layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:start}.tasklist{display:grid;gap:12px}.task{padding:16px;display:grid;gap:10px}.task-top{display:flex;justify-content:space-between;gap:10px;align-items:start}.task-title{font-weight:700;font-size:16px}.task-meta{display:flex;flex-wrap:wrap;gap:8px}.pill{font-size:12px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:var(--muted)} .pill.high{color:#ffe4a0;background:rgba(255,206,102,.12)} .pill.medium{color:#b9c5ff;background:rgba(139,156,255,.12)} .pill.low{color:#9be8bd;background:rgba(116,240,167,.10)} .pill.done{color:#9ff1c2} .pill.blocked{color:#ffb1b1;background:rgba(255,125,125,.12)}
+    .task-desc{color:var(--muted);font-size:13px;line-height:1.55}.subtasks{display:grid;gap:8px}.subtask{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:13px}
+    .editor{position:sticky;top:18px}.editor form{display:grid;gap:10px}.editor h3{margin:0 0 10px 0;font-size:18px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px} textarea{min-height:90px;resize:vertical}
+    .login{position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,4,10,.76);backdrop-filter:blur(16px);z-index:50}.login-card{width:min(520px, calc(100vw - 28px));padding:24px}.login-card h2{margin:0 0 6px 0;font-family:'Cormorant Garamond',serif;font-size:40px}.login-card p{margin:0 0 18px 0;color:var(--muted);line-height:1.6}.login-actions{display:flex;gap:10px;margin-top:10px}.error{color:var(--bad);font-size:13px;min-height:18px}.hidden{display:none !important}
+    @media (max-width:1100px){.hero,.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.editor{position:static}} @media (max-width:640px){.wrap{padding:14px}.brand-grid,.stats,.grid2{grid-template-columns:1fr}.toolbar{flex-direction:column}.tabs{width:100%;overflow:auto}}
+  </style>
+</head>
+<body>
+  <div class="grain"></div>
+  <div class="login" id="loginOverlay">
+    <div class="login-card">
+      <div class="eyebrow">Private Project Dashboard</div>
+      <h2>Project Atlas</h2>
+      <p>Enter the password to access the task list, senior summary, and editable backlog.</p>
+      <input id="passwordInput" type="password" placeholder="Password" />
+      <div class="login-actions">
+        <button class="btn" id="loginBtn">Unlock</button>
+        <button class="btn secondary" id="demoBtn">Demo mode</button>
+      </div>
+      <div class="error" id="loginError"></div>
+    </div>
+  </div>
+  <div class="wrap hidden" id="app">
+    <section class="hero">
+      <div class="brand panel">
+        <div class="eyebrow">Project Control Room</div>
+        <h1>Task system for senior visibility and daily execution.</h1>
+        <div class="sub">Two-layer project management: a clean senior overview plus a detailed working backlog that can grow without turning into a mess.</div>
+        <div class="brand-grid">
+          <div class="mini"><b id="statOpen">0</b><span>open tasks</span></div>
+          <div class="mini"><b id="statBlocked">0</b><span>blocked tasks</span></div>
+          <div class="mini"><b id="statDone">0</b><span>done tasks</span></div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Senior view</div><div class="panel-note">What’s happening, what’s blocked, what’s next.</div></div></div>
+          <div class="stats">
+            <div class="stat"><div class="k">Project phase</div><div class="v" id="phaseStat">Build</div><div class="d">Current operating phase</div></div>
+            <div class="stat"><div class="k">Backlog</div><div class="v" id="backlogCount">0</div><div class="d">Tasks tracked</div></div>
+            <div class="stat"><div class="k">Blockers</div><div class="v" id="blockedCount">0</div><div class="d">Need attention</div></div>
+            <div class="stat"><div class="k">Velocity</div><div class="v" id="velocityStat">0%</div><div class="d">Finished tasks</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><div class="panel-title">Task views</div><div class="panel-note">Senior summary and working backlog in one place.</div></div><div class="tabs"><button class="tab active" data-view="senior">Senior</button><button class="tab" data-view="backlog">Backlog</button><button class="tab" data-view="all">All</button></div></div>
+      <div class="toolbar">
+        <div class="searchbox"><input id="searchInput" placeholder="Search tasks, blockers, owners, notes…" /><select id="statusFilter"><option value="all">All statuses</option><option value="todo">Todo</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn secondary" id="exportBtn">Export JSON</button><button class="btn secondary" id="resetBtn">Reset demo data</button></div>
+      </div>
+      <div class="layout">
+        <div><div class="tasklist" id="taskList"></div></div>
+        <div class="editor panel">
+          <h3>Add / update task</h3>
+          <form id="taskForm">
+            <input name="title" placeholder="Task title" required />
+            <div class="grid2"><select name="priority"><option value="high">High priority</option><option value="medium">Medium priority</option><option value="low">Low priority</option></select><select name="status"><option value="todo">Todo</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div>
+            <div class="grid2"><input name="owner" placeholder="Owner / team" value="us" /><input name="area" placeholder="Area (campaign / company / prospect)" /></div>
+            <textarea name="summary" placeholder="Short summary"></textarea><textarea name="details" placeholder="Details"></textarea>
+            <input name="subtasks" placeholder="Subtasks separated by |" /><input name="blockers" placeholder="Blockers separated by |" /><input name="dependencies" placeholder="Dependencies separated by |" />
+            <button class="btn" type="submit">Add task</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+    const SECRET='atlas', storageKey='project_atlas_tasks_v1', authKey='project_atlas_auth_v1';
+    const seedTasks=[{id:'TASK-001',title:'Confirm Salesforce Campaign field API names',level:'task',area:'campaign',priority:'high',status:'done',owner:'us',summary:'Validate the Campaign fields before wiring production queries.',details:'Use FieldDefinition to confirm exact API names for Campaign_Brief__c and related targeting fields.',subtasks:['Run FieldDefinition query','Confirm target fields','Update workflow queries'],blockers:[],dependencies:[]},{id:'TASK-002',title:'Build campaign worker',level:'task',area:'campaign',priority:'high',status:'in_progress',owner:'us',summary:'Read Salesforce Campaign and build the campaign rule pack.',details:'Campaign Brief is the main source of truth. Structured fields become targeting and exclusion rules.',subtasks:['Fetch campaign','Parse brief','Normalize targeting fields'],blockers:[],dependencies:['TASK-001']},{id:'TASK-003',title:'Build company worker',level:'task',area:'company',priority:'high',status:'in_progress',owner:'us',summary:'Resolve account, classify fit, and detect parent/child/manual review.',details:'Parent resolution priority: LinkedIn -> Website -> Name. No auto merge.',subtasks:['Account read','Parent lookup','Manual review routing'],blockers:[],dependencies:['TASK-002']},{id:'TASK-004',title:'Build prospect worker',level:'task',area:'prospect',priority:'medium',status:'todo',owner:'us',summary:'Reuse existing contacts and find missing decision-makers.',details:'Only runs when company is campaign eligible and prospecting allowed.',subtasks:['Existing contact check','Gap detection','New prospect discovery'],blockers:[],dependencies:['TASK-003']},{id:'TASK-005',title:'Build result handler',level:'task',area:'ops',priority:'medium',status:'todo',owner:'us',summary:'Write results back to Salesforce and keep outputs clean.',details:'Update Account, create Contacts, and preserve a clear audit trail.',subtasks:['Company result handling','Prospect result handling','Audit logging'],blockers:[],dependencies:['TASK-003','TASK-004']},{id:'TASK-006',title:'Create senior dashboard view',level:'task',area:'web',priority:'medium',status:'todo',owner:'us',summary:'A clean top-level view for management.',details:'Show progress, blockers, backlog, and what matters next.',subtasks:['Summary cards','Blocker view','Milestone view'],blockers:[],dependencies:[]}];
+    const $=s=>document.querySelector(s), loginOverlay=$('#loginOverlay'), app=$('#app'), loginError=$('#loginError'), taskList=$('#taskList'), taskForm=$('#taskForm'), searchInput=$('#searchInput'), statusFilter=$('#statusFilter'), tabs=[...document.querySelectorAll('.tab')];
+    let tasks=loadTasks(), currentView='senior';
+    function loadTasks(){const saved=localStorage.getItem(storageKey);return saved?JSON.parse(saved):seedTasks.slice()} function saveTasks(){localStorage.setItem(storageKey,JSON.stringify(tasks));updateStats();render()} function verifyPassword(v){return v.trim().toLowerCase()===SECRET} function login(ok){if(ok){localStorage.setItem(authKey,'1');loginOverlay.classList.add('hidden');app.classList.remove('hidden');updateStats();render()}}
+    if(localStorage.getItem(authKey)==='1') login(true);
+    $('#loginBtn').onclick=()=>{const val=$('#passwordInput').value; if(verifyPassword(val)) return login(true); loginError.textContent='Wrong password.'}; $('#demoBtn').onclick=()=>{$('#passwordInput').value=SECRET; loginError.textContent='Demo password filled in.'}; $('#passwordInput').addEventListener('keydown',e=>{if(e.key==='Enter') $('#loginBtn').click()});
+    function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+    function render(){const q=searchInput.value.toLowerCase().trim(), st=statusFilter.value; let filtered=tasks.filter(t=>{const matchView=currentView==='all'||(currentView==='senior' ? ['high','blocked'].includes(t.priority)||t.status!=='todo' : true); const matchStatus=st==='all'||t.status===st; const hay=[t.title,t.summary,t.details,t.owner,t.area,...(t.blockers||[]),...(t.dependencies||[]),...(t.subtasks||[])].join(' ').toLowerCase(); return matchView&&matchStatus&&(!q||hay.includes(q))}); if(currentView==='senior') filtered=filtered.sort((a,b)=>({blocked:0,in_progress:1,todo:2,done:3}[a.status]-{blocked:0,in_progress:1,todo:2,done:3}[b.status])).slice(0,8); taskList.innerHTML=filtered.map(task=>`<article class="task"><div class="task-top"><div><div class="task-title">${esc(task.title)}</div><div class="task-desc">${esc(task.summary)}</div></div><div class="task-meta"><span class="pill ${task.priority}">${esc(task.priority)}</span><span class="pill ${task.status}">${esc(task.status)}</span><span class="pill">${esc(task.area||'general')}</span></div></div><div class="task-desc">${esc(task.details||'')}</div><div class="task-meta"><span class="pill">Owner: ${esc(task.owner||'us')}</span><span class="pill">ID: ${esc(task.id)}</span>${task.dependencies?.length?`<span class="pill">Deps: ${esc(task.dependencies.join(', '))}</span>`:''}${task.blockers?.length?`<span class="pill blocked">Blockers: ${esc(task.blockers.join(', '))}</span>`:''}</div>${task.subtasks?.length?`<div class="subtasks">${task.subtasks.map(s=>`<div class="subtask"><span>${esc(s)}</span><span class="pill">subtask</span></div>`).join('')}</div>`:''}</article>`).join('')||'<div class="task"><div class="task-title">No tasks match this filter.</div></div>'}
+    function updateStats(){const open=tasks.filter(t=>t.status!=='done').length, blocked=tasks.filter(t=>t.status==='blocked').length, done=tasks.filter(t=>t.status==='done').length, total=tasks.length||1; $('#statOpen').textContent=open; $('#statBlocked').textContent=blocked; $('#statDone').textContent=done; $('#backlogCount').textContent=tasks.length; $('#blockedCount').textContent=blocked; $('#velocityStat').textContent=Math.round((done/total)*100)+'%'; $('#phaseStat').textContent=open>0?'Build':'Stabilize'}
+    taskForm.addEventListener('submit',e=>{e.preventDefault(); const f=new FormData(taskForm), split=v=>String(v||'').split('|').map(s=>s.trim()).filter(Boolean); tasks.unshift({id:'TASK-'+String(tasks.length+1).padStart(3,'0'),title:f.get('title'),level:'task',area:f.get('area')||'general',priority:f.get('priority'),status:f.get('status'),owner:f.get('owner')||'us',summary:f.get('summary')||'',details:f.get('details')||'',subtasks:split(f.get('subtasks')),blockers:split(f.get('blockers')),dependencies:split(f.get('dependencies'))}); taskForm.reset(); taskForm.owner.value='us'; saveTasks()});
+    searchInput.addEventListener('input',render); statusFilter.addEventListener('change',render); tabs.forEach(tab=>tab.addEventListener('click',()=>{tabs.forEach(t=>t.classList.remove('active')); tab.classList.add('active'); currentView=tab.dataset.view; render()}));
+    $('#resetBtn').onclick=()=>{if(!confirm('Reset tasks to demo data?')) return; tasks=seedTasks.slice(); saveTasks()}; $('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(tasks,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='project-atlas-tasks.json'; a.click(); URL.revokeObjectURL(url)};
+    updateStats(); render();
+  </script>
+</body>
+</html>
