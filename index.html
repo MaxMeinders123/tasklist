@@ -110,16 +110,6 @@
         <div class="badge" id="todayBadge">Today</div>
       </div>
 
-      
-      <div class="calendar" style="margin-top:14px;grid-template-columns:1fr;">
-        <div class="calendar-card">
-          <h3>Assist / check</h3>
-          <div class="small" id="assistText">Drop in a task and I can tell you if it looks like something I can help fix automatically, or whether it needs manual work.</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-            <button class="btn secondary" id="assistBtn" type="button">Check current selected task</button>
-          </div>
-        </div>
-      </div>
       <div class="summary-grid">
         <div class="metric"><div class="k">Backlog</div><div class="v" id="backlogCount">0</div><div class="d">Not started yet</div></div>
         <div class="metric"><div class="k">Working</div><div class="v" id="workingCount">0</div><div class="d">Active right now</div></div>
@@ -204,8 +194,6 @@
             <input name="blockers" placeholder="Blockers separated by |" />
           </div>
           <input name="dependencies" placeholder="Dependencies separated by |" />
-          <input name="related_to" placeholder="Connect to task IDs separated by |" />
-          <div class="small">Tip: use task IDs like TASK-001 to link related tasks.</div>
           <div class="task-actions">
             <button class="btn" type="submit">Save task</button>
             <button class="btn secondary" type="button" id="clearBtn">Clear</button>
@@ -253,7 +241,6 @@
     const el = id => document.getElementById(id);
     const taskTemplate = el('taskTemplate');
     const taskForm = el('taskForm');
-    let selectedTaskId = null;
     const columnsEl = el('columns');
 
     function loadTasks(){
@@ -286,15 +273,6 @@
         return filterOk && (!q || hay.includes(q));
       });
     }
-
-    function assessFixability(task){
-      const text = [task.title, task.summary, task.details, task.notes].join(' ').toLowerCase();
-      if (/bug|fix|error|broken|syntax|copy|text|layout|ui|button|field|typo/.test(text)) return 'Likely fixable by me';
-      if (/api|auth|database|supabase|integration|workflow|automation/.test(text)) return 'Likely fixable with setup + testing';
-      if (/research|discover|decide|strategy|meeting|call/.test(text)) return 'Can help, but it needs your judgment';
-      return 'Needs a human decision first';
-    }
-
     function stats(){
       const open = state.tasks.filter(t => t.status !== 'finished').length;
       const working = state.tasks.filter(t => t.status === 'working_on_it').length;
@@ -357,7 +335,7 @@
       `;
       if (task.notes) card.querySelector('.task-sub').innerHTML += `<div class="small" style="margin-top:8px;color:#9aa7c2;">Notes: ${esc(task.notes)}</div>`;
       card.ondragstart = e => e.dataTransfer.setData('text/plain', task.id);
-      card.querySelector('.edit-btn').onclick = () => { selectedTaskId = task.id; fillForm(task); el('assistText').textContent = `${task.title}: ${assessFixability(task)}`; };
+      card.querySelector('.edit-btn').onclick = () => fillForm(task);
       card.querySelector('.del-btn').onclick = () => deleteTask(task.id);
       return card.outerHTML;
     }
@@ -371,7 +349,6 @@
       render();
     };
     function fillForm(task){
-      selectedTaskId = task.id;
       taskForm.taskId.value = task.id;
       taskForm.title.value = task.title || '';
       taskForm.status.value = task.status || 'backlog';
@@ -386,10 +363,9 @@
       taskForm.subtasks.value = (task.subtasks||[]).join(' | ');
       taskForm.blockers.value = (task.blockers||[]).join(' | ');
       taskForm.dependencies.value = (task.dependencies||[]).join(' | ');
-      taskForm.related_to.value = (task.related_to||[]).join(' | ');
       el('editorTitle').textContent = `Edit ${task.id}`;
     }
-    function clearForm(){ taskForm.reset(); taskForm.owner.value = 'us'; el('editorTitle').textContent = 'Add or update task'; el('assistText').textContent='Drop in a task and I can tell you if it looks like something I can help fix automatically, or whether it needs manual work.'; }
+    function clearForm(){ taskForm.reset(); taskForm.owner.value = 'us'; el('editorTitle').textContent = 'Add or update task'; }
     function deleteTask(id){ if(!confirm('Delete this task?')) return; state.tasks = state.tasks.filter(t => t.id !== id); render(); clearForm(); }
     taskForm.addEventListener('submit', e => {
       e.preventDefault();
@@ -411,7 +387,6 @@
         subtasks:splitList(f.get('subtasks')),
         blockers:splitList(f.get('blockers')),
         dependencies:splitList(f.get('dependencies')),
-        related_to:splitList(f.get('related_to')), 
         updated_at:new Date().toISOString()
       };
       if (existing) Object.assign(existing, next);
@@ -425,11 +400,6 @@
     el('clearBtn').onclick = clearForm;
     el('exportBtn').onclick = () => { const blob = new Blob([JSON.stringify(state.tasks,null,2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='nexus-board.json'; a.click(); URL.revokeObjectURL(url); };
     el('resetBtn').onclick = () => { if(!confirm('Reset to demo board?')) return; state.tasks = seedTasks.slice(); render(); clearForm(); };
-    el('assistBtn').onclick = () => {
-      const task = state.tasks.find(t => t.id === selectedTaskId) || state.tasks.find(t => t.id === taskForm.taskId.value);
-      if (!task) { el('assistText').textContent = 'Pick a task first, then I can tell you if it looks fixable automatically.'; return; }
-      el('assistText').textContent = `${task.title}: ${assessFixability(task)}. If it is a simple board/layout/data issue, I can usually help fix it. If it is an external dependency, it needs manual work.`;
-    };
 
     function boot(){
       el('loginOverlay').classList.add('hidden');
