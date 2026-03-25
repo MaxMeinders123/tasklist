@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Project Atlas — Agenda Board v2</title>
+  <title>Nexus — Agenda Board v2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -91,10 +91,14 @@
 <body>
   <div class="grain"></div>
 
+  <div style="max-width:1440px;margin:16px auto 0;padding:0 24px;">
+    <div style="padding:14px 16px;border-radius:16px;background:#eaf2ff;border:1px solid #cfe0ff;color:#1f4f9d;font-weight:700;box-shadow:0 10px 24px rgba(47,128,237,.10);">Nexus is loading — if you see this bar, the page is alive and the board will appear below.</div>
+  </div>
+
   <div class="login hidden" id="loginOverlay">
     <div class="login-card card">
       <div class="eyebrow">Private shared task board</div>
-      <h2>Project Atlas</h2>
+      <h2>Nexus</h2>
       <p>Sign in to access the team backlog, senior summary, agenda, and shared notes. This version uses Supabase for real login and shared data.</p>
       <div class="grid2">
         <input id="emailInput" type="email" placeholder="Email" />
@@ -111,7 +115,7 @@
 
   <div class="wrap hidden" id="app">
     <div class="topbar">
-      <div class="eyebrow">Project Atlas • v2 agenda-first redesign</div>
+      <div class="eyebrow">Nexus • v2 agenda-first redesign</div>
       <div class="role-badge" id="roleBadge">Role: editor</div>
       <div class="user-badge" id="userBadge">Signed out</div>
     </div>
